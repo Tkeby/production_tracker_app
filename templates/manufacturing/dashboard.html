@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Production Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header with Stats -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-4xl font-bold">Production Dashboard</h1>
+            <p class="text-base-content/70 mt-2">Monitor and manage your production runs</p>
+        </div>
+        <a href="{% url 'manufacturing:create_production_run' %}" 
+           class="btn btn-primary btn-lg gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Start New Production Run
+        </a>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats shadow mb-8 w-full">
+        <div class="stat">
+            <div class="stat-figure text-primary">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Active Runs</div>
+            <div class="stat-value text-primary">{{ production_runs.count }}</div>
+            <div class="stat-desc">Currently in progress</div>
+        </div>
+        
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Today's Production</div>
+            <div class="stat-value text-secondary">--</div>
+            <div class="stat-desc">Packs produced</div>
+        </div>
+        
+        <div class="stat">
+            <div class="stat-figure text-accent">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Average OEE</div>
+            <div class="stat-value text-accent">--</div>
+            <div class="stat-desc">This shift</div>
+        </div>
+    </div>
+
+    <!-- Production Runs Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for run in production_runs %}
+        <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-200">
+            <div class="card-body">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="card-title text-lg">{{ run.production_batch_number }}</h3>
+                    {% if run.is_completed %}
+                        <div class="badge badge-success badge-outline">Completed</div>
+                    {% else %}
+                        <div class="badge badge-warning badge-outline">In Progress</div>
+                    {% endif %}
+                </div>
+                
+                <div class="space-y-2 mb-4">
+                    <p class="text-base-content/80">
+                        <span class="font-medium">{{ run.product.name }}</span> - {{ run.package_size }}
+                    </p>
+                    <p class="text-sm text-base-content/60">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                        </svg>
+                        Line: {{ run.production_line.name }}
+                    </p>
+                    <p class="text-sm text-base-content/60">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Started: {{ run.production_start|date:"H:i" }}
+                    </p>
+                </div>
+                
+                <div class="card-actions justify-between items-center">
+                    {% if run.total_downtime_minutes > 0 %}
+                        <div class="badge badge-error badge-sm">
+                            {{ run.total_downtime_minutes }}min downtime
+                        </div>
+                    {% else %}
+                        <div class="badge badge-success badge-sm">No downtime</div>
+                    {% endif %}
+                    
+                    <a href="{% url 'manufacturing:production_run_detail' run.pk %}" 
+                       class="btn btn-primary btn-sm">
+                        View Details
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <!-- Empty State -->
+        <div class="col-span-full">
+            <div class="hero min-h-[400px] bg-base-200 rounded-2xl">
+                <div class="hero-content text-center">
+                    <div class="max-w-md">
+                        <div class="text-6xl mb-4">🏭</div>
+                        <h2 class="text-2xl font-bold mb-4">No Active Production Runs</h2>
+                        <p class="mb-6 text-base-content/70">
+                            Start a new production run to begin tracking your manufacturing process.
+                        </p>
+                        <a href="{% url 'manufacturing:create_production_run' %}" 
+                           class="btn btn-primary btn-wide">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Start Production Run
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="flex justify-center mt-12">
+        <div class="join">
+            <a href="{% url 'manufacturing:reports_list' %}" class="btn btn-outline join-item">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                View Reports
+            </a>
+            <button class="btn btn-outline join-item" onclick="location.reload()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Refresh
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

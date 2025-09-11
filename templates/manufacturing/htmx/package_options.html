@@ -1,0 +1,3 @@
+{% for package in packages %}
+    <option value="{{ package.id }}">{{ package.size }} {{ package.get_package_type_display }}</option>
+{% endfor %}

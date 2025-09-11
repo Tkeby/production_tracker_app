@@ -1,0 +1,428 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Breadcrumbs -->
+        <div class="breadcrumbs text-sm mb-6">
+            <ul>
+                <li><a href="{% url 'manufacturing:dashboard' %}">Dashboard</a></li>
+                <li>{{ object.production_batch_number }}</li>
+            </ul>
+        </div>
+        
+        <!-- Header Card -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="avatar placeholder">
+                                <div class="bg-primary text-primary-content rounded-xl w-16">
+                                    <span class="text-2xl">🏭</span>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="text-4xl font-bold">{{ object.production_batch_number }}</h1>
+                                <p class="text-lg text-base-content/70">{{ object.product.name }} - {{ object.package_size }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-3">
+                            <div class="badge badge-outline badge-lg">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                                </svg>
+                                {{ object.production_line.name }}
+                            </div>
+                            <div class="badge badge-outline badge-lg">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                {{ object.shift.get_name_display }}
+                            </div>
+                            <div class="badge badge-outline badge-lg">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                {{ object.shift_teamleader.get_full_name|default:object.shift_teamleader.username }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-3">
+                        <div class="flex gap-2">
+                            {% if object.is_completed %}
+                                <div class="badge badge-success badge-lg gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Completed
+                                </div>
+                            {% else %}
+                                <div class="badge badge-warning badge-lg gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    In Progress
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            {% if not object.is_completed %}
+                                <a href="{% url 'manufacturing:update_production_run' object.pk %}" 
+                                   class="btn btn-primary btn-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Edit
+                                </a>
+                                <button class="btn btn-success btn-sm" onclick="finalize_modal.showModal()">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Finalize
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Stats -->
+        <div class="stats shadow w-full mb-8">
+            <div class="stat">
+                <div class="stat-figure text-primary">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Good Products</div>
+                <div class="stat-value text-primary">{{ object.good_products_pack|floatformat:0 }}</div>
+                <div class="stat-desc">Packs produced</div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-figure text-secondary">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Filler Output</div>
+                <div class="stat-value text-secondary">{{ object.filler_output|floatformat:0 }}</div>
+                <div class="stat-desc">Units per hour</div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-figure text-accent">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Downtime</div>
+                <div class="stat-value text-accent">{{ object.total_downtime_minutes }}</div>
+                <div class="stat-desc">Minutes</div>
+            </div>
+        </div>
+        
+        <!-- Production Data -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Basic Info -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Production Information
+                    </h3>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra">
+                            <tbody>
+                                <tr>
+                                    <td class="font-medium">Production Start</td>
+                                    <td>{{ object.production_start|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% if object.production_end %}
+                                <tr>
+                                    <td class="font-medium">Production End</td>
+                                    <td>{{ object.production_end|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="font-medium">Syrup Volume</td>
+                                    <td>{{ object.final_syrup_volume }}L</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">Mixing Ratio</td>
+                                    <td>{{ object.mixing_ratio }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">Duration</td>
+                                    <td>
+                                        {% if object.production_end %}
+                                            {{ object.production_duration_minutes|floatformat:0 }} minutes
+                                        {% else %}
+                                            <div class="badge badge-warning">Ongoing</div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OEE Metrics -->
+            {% if object.is_completed and object.report %}
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl">
+                        <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        OEE Metrics
+                    </h3>
+                    
+                    <div class="text-center mb-6">
+                        <div class="radial-progress text-primary text-6xl font-bold" style="--value:{{ object.report.oee|floatformat:0 }}; --size:8rem; --thickness:8px;">
+                            {{ object.report.oee }}%
+                        </div>
+                        <p class="text-lg font-semibold mt-2">Overall OEE</p>
+                        <div class="badge badge-lg 
+                            {% if object.report.oee >= 85 %}badge-success
+                            {% elif object.report.oee >= 70 %}badge-warning  
+                            {% else %}badge-error{% endif %}">
+                            {{ object.report.oee_grade }}
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="radial-progress text-info text-lg" style="--value:{{ object.report.availability|floatformat:0 }}; --size:4rem; --thickness:4px;">
+                                {{ object.report.availability|floatformat:0 }}%
+                            </div>
+                            <p class="text-sm font-medium mt-1">Availability</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="radial-progress text-warning text-lg" style="--value:{{ object.report.performance|floatformat:0 }}; --size:4rem; --thickness:4px;">
+                                {{ object.report.performance|floatformat:0 }}%
+                            </div>
+                            <p class="text-sm font-medium mt-1">Performance</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="radial-progress text-success text-lg" style="--value:{{ object.report.quality|floatformat:0 }}; --size:4rem; --thickness:4px;">
+                                {{ object.report.quality|floatformat:0 }}%
+                            </div>
+                            <p class="text-sm font-medium mt-1">Quality</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card bg-base-200">
+                <div class="card-body text-center">
+                    <h3 class="card-title justify-center text-base-content/60">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        OEE Metrics
+                    </h3>
+                    <p class="text-base-content/60">Complete this production run to see OEE metrics</p>
+                    <div class="badge badge-outline badge-lg">Pending Completion</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Packaging Material & Utility Data -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Packaging Material -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                        Packaging Material
+                    </h3>
+                    {% if object.packaging_material %}
+                        <div class="overflow-x-auto">
+                            <table class="table table-compact">
+                                <tbody>
+                                    <tr>
+                                        <td>Preforms Used</td>
+                                        <td class="text-right font-mono">{{ object.packaging_material.qty_preform_used|floatformat:0 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Caps Used</td>
+                                        <td class="text-right font-mono">{{ object.packaging_material.qty_cap_used|floatformat:0 }}</td>
+                                    </tr>
+                                    <tr class="text-error">
+                                        <td>Product Reject</td>
+                                        <td class="text-right font-mono">{{ object.packaging_material.qty_product_reject|floatformat:0 }}</td>
+                                    </tr>
+                                    <tr class="text-error">
+                                        <td>Preform Reject</td>
+                                        <td class="text-right font-mono">{{ object.packaging_material.qty_preform_reject|floatformat:0 }}</td>
+                                    </tr>
+                                    <tr class="text-error">
+                                        <td>Bottle Reject</td>
+                                        <td class="text-right font-mono">{{ object.packaging_material.qty_bottle_reject|floatformat:0 }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-base-content/60 py-8">
+                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                            <p>No packaging data recorded</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Utility -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <svg class="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Utility Consumption
+                    </h3>
+                    {% if object.utility %}
+                        <div class="overflow-x-auto">
+                            <table class="table table-compact">
+                                <tbody>
+                                    <tr>
+                                        <td>CO2 Consumption</td>
+                                        <td class="text-right font-mono">{{ object.utility.kg_co2 }} kg</td>
+                                    </tr>
+                                    {% if object.utility.boiler_fuel_l %}
+                                    <tr>
+                                        <td>Boiler Fuel</td>
+                                        <td class="text-right font-mono">{{ object.utility.boiler_fuel_l }} L</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if object.utility.generator_fuel_l %}
+                                    <tr>
+                                        <td>Generator Fuel</td>
+                                        <td class="text-right font-mono">{{ object.utility.generator_fuel_l }} L</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if object.utility.edg_power_consumption %}
+                                    <tr>
+                                        <td>EDG Power</td>
+                                        <td class="text-right font-mono">{{ object.utility.edg_power_consumption }} kWh</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-base-content/60 py-8">
+                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <p>No utility data recorded</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Stop Events -->
+        {% if object.stop_events.exists %}
+        <div class="card bg-base-100 shadow-xl mb-6">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <svg class="w-6 h-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5C2.962 17.333 3.924 19 5.464 19z"></path>
+                    </svg>
+                    Downtime Events
+                    <div class="badge badge-error">{{ object.stop_events.count }}</div>
+                </h3>
+                
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>Code</th>
+                                <th>Reason</th>
+                                <th>Duration</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in object.stop_events.all %}
+                            <tr>
+                                <td>
+                                    <div class="font-medium">{{ event.machine.machine_name }}</div>
+                                    <div class="text-sm text-base-content/60">{{ event.machine.machine_code }}</div>
+                                </td>
+                                <td>
+                                    <div class="badge badge-error badge-outline">{{ event.code.code }}</div>
+                                </td>
+                                <td class="max-w-xs">
+                                    <div class="truncate" title="{{ event.reason }}">{{ event.reason }}</div>
+                                </td>
+                                <td>
+                                    <div class="badge badge-warning">{{ event.duration_minutes }}min</div>
+                                </td>
+                                <td class="text-sm text-base-content/60">
+                                    {{ event.timestamp|date:"H:i" }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Navigation Actions -->
+        <div class="flex justify-center">
+            <div class="join">
+                <a href="{% url 'manufacturing:dashboard' %}" class="btn btn-outline join-item">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="{% url 'manufacturing:reports_list' %}" class="btn btn-outline join-item">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    All Reports
+                </a>
+            </div>
+        </div>
+        
+        <!-- Finalize Modal -->
+        {% if not object.is_completed %}
+        <dialog id="finalize_modal" class="modal">
+            <div class="modal-box">
+                <h3 class="font-bold text-lg">Finalize Production Run</h3>
+                <p class="py-4">Are you sure you want to finalize this production run? This action cannot be undone and will calculate final metrics.</p>
+                <div class="modal-action">
+                    <form method="post" action="{% url 'manufacturing:finalize_production_run' object.pk %}">
+                        {% csrf_token %}
+                        <button type="button" class="btn" onclick="finalize_modal.close()">Cancel</button>
+                        <button type="submit" class="btn btn-success">Finalize Run</button>
+                    </form>
+                </div>
+            </div>
+        </dialog>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

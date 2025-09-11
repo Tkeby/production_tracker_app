@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Breadcrumbs -->
+        <div class="breadcrumbs text-sm mb-6">
+            <ul>
+                <li><a href="{% url 'manufacturing:dashboard' %}">Dashboard</a></li>
+                <li>Production Reports</li>
+            </ul>
+        </div>
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+            <div>
+                <h1 class="text-4xl font-bold">Production Reports</h1>
+                <p class="text-base-content/70 mt-2">Complete overview of all production runs and their metrics</p>
+            </div>
+            <div class="flex gap-2">
+                <div class="dropdown dropdown-end">
+                    <div tabindex="0" role="button" class="btn btn-outline">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                        </svg>
+                        Filters
+                    </div>
+                    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <li><a>Last 7 days</a></li>
+                        <li><a>Last 30 days</a></li>
+                        <li><a>This month</a></li>
+                        <li><a>All time</a></li>
+                    </ul>
+                </div>
+                <a href="{% url 'manufacturing:dashboard' %}" class="btn btn-primary">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                    </svg>
+                    Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        {% if reports %}
+        <div class="stats shadow w-full mb-8">
+            <div class="stat">
+                <div class="stat-figure text-primary">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Total Reports</div>
+                <div class="stat-value text-primary">{{ reports|length }}</div>
+                <div class="stat-desc">Production runs completed</div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-figure text-secondary">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Avg OEE</div>
+                <div class="stat-value text-secondary">--</div>
+                <div class="stat-desc">Overall equipment effectiveness</div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-figure text-accent">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Total Production</div>
+                <div class="stat-value text-accent">--</div>
+                <div class="stat-desc">Packs produced</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Reports Table -->
+        <div class="card bg-base-100 shadow-xl">
+            {% if reports %}
+                <div class="card-body p-0">
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra">
+                            <thead>
+                                <tr class="bg-base-200">
+                                    <th class="font-bold">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            Production Run
+                                        </div>
+                                    </th>
+                                    <th class="font-bold">Date</th>
+                                    <th class="font-bold">Product</th>
+                                    <th class="font-bold">OEE</th>
+                                    <th class="font-bold">Production</th>
+                                    <th class="font-bold">Quality</th>
+                                    <th class="font-bold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in reports %}
+                                <tr class="hover">
+                                    <td>
+                                        <div class="flex items-center gap-3">
+                                            <div class="avatar placeholder">
+                                                <div class="bg-neutral text-neutral-content rounded-full w-8">
+                                                    <span class="text-xs">🏭</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="font-bold">{{ report.production_run.production_batch_number }}</div>
+                                                <div class="text-sm opacity-50">Line: {{ report.production_run.production_line.name }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="font-medium">{{ report.production_run.date|date:"M d, Y" }}</div>
+                                        <div class="text-sm opacity-50">{{ report.production_run.date|date:"l" }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="font-medium">{{ report.production_run.product.name }}</div>
+                                        <div class="badge badge-outline badge-sm">{{ report.production_run.package_size }}</div>
+                                    </td>
+                                    <td>
+                                        {% if report.oee %}
+                                            <div class="flex flex-col items-start">
+                                                <div class="font-bold text-lg">{{ report.oee|floatformat:1 }}%</div>
+                                                <div class="badge badge-sm 
+                                                    {% if report.oee >= 85 %}badge-success
+                                                    {% elif report.oee >= 70 %}badge-warning
+                                                    {% else %}badge-error{% endif %}">
+                                                    {{ report.oee_grade }}
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="badge badge-ghost">N/A</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="font-mono font-bold">{{ report.production_run.good_products_pack|floatformat:0 }}</div>
+                                        <div class="text-sm opacity-50">packs</div>
+                                    </td>
+                                    <td>
+                                        {% if report.quality %}
+                                            <div class="radial-progress text-sm 
+                                                {% if report.quality >= 95 %}text-success
+                                                {% elif report.quality >= 90 %}text-warning
+                                                {% else %}text-error{% endif %}"
+                                                style="--value:{{ report.quality|floatformat:0 }}; --size:3rem; --thickness:3px;">
+                                                {{ report.quality|floatformat:0 }}%
+                                            </div>
+                                        {% else %}
+                                            <div class="badge badge-ghost">N/A</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="dropdown dropdown-end">
+                                            <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                                                </svg>
+                                            </div>
+                                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                                                <li>
+                                                    <a href="{% url 'manufacturing:production_run_detail' report.production_run.pk %}">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                        </svg>
+                                                        View Details
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="#">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                        </svg>
+                                                        Export PDF
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <div class="flex flex-col sm:flex-row justify-between items-center p-6 border-t border-base-200">
+                    <div class="text-sm text-base-content/70 mb-4 sm:mb-0">
+                        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} results
+                    </div>
+                    <div class="join">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1" class="join-item btn btn-outline btn-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                                </svg>
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-outline btn-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </a>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if num == page_obj.number %}
+                                <button class="join-item btn btn-primary btn-sm">{{ num }}</button>
+                            {% elif num|add:"-1" <= page_obj.number|add:"2" and num|add:"1" >= page_obj.number|add:"-2" %}
+                                <a href="?page={{ num }}" class="join-item btn btn-outline btn-sm">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-outline btn-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn btn-outline btn-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                                </svg>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="card-body">
+                    <div class="hero min-h-[400px]">
+                        <div class="hero-content text-center">
+                            <div class="max-w-md">
+                                <div class="text-8xl mb-6">📊</div>
+                                <h3 class="text-2xl font-bold mb-4">No Reports Found</h3>
+                                <p class="text-base-content/70 mb-8">
+                                    Complete some production runs to see detailed reports and analytics here.
+                                </p>
+                                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                                    <a href="{% url 'manufacturing:create_production_run' %}" 
+                                       class="btn btn-primary btn-lg">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        Start New Production Run
+                                    </a>
+                                    <a href="{% url 'manufacturing:dashboard' %}" 
+                                       class="btn btn-outline btn-lg">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                        </svg>
+                                        Back to Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="text-center mt-8">
+            <div class="join">
+                <button class="btn btn-outline join-item">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export All
+                </button>
+                <button class="btn btn-outline join-item">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0a2 2 0 01-2-2v-1"></path>
+                    </svg>
+                    Print Summary
+                </button>
+                <a href="{% url 'manufacturing:create_production_run' %}" class="btn btn-primary join-item">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    New Production Run
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
