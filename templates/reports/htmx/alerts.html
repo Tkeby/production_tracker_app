@@ -1,0 +1,31 @@
+{% load static %}
+
+<div class="space-y-2">
+    {% if alerts %}
+        {% for alert in alerts %}
+        <div class="alert alert-{{ alert.severity|lower }} shadow-lg">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                    <h3 class="font-bold">{{ alert.type|title }}</h3>
+                    <div class="text-xs">{{ alert.message }}</div>
+                </div>
+            </div>
+            <div class="flex-none">
+                <div class="badge badge-outline">{{ alert.value|floatformat:1 }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-success">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>No production alerts at this time. All systems operating normally.</span>
+            </div>
+        </div>
+    {% endif %}
+</div>

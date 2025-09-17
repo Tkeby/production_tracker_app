@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Production Efficiency Report</h1>
+                <p class="text-lg text-gray-600 mt-2">Comprehensive analysis of production performance and efficiency metrics</p>
+            </div>
+            <div class="breadcrumbs text-sm">
+                <ul>
+                    <li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
+                    <li>Efficiency Report</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Filter Form -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Report Parameters</h3>
+                <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Start Date</span>
+                        </label>
+                        {{ form.start_date }}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">End Date</span>
+                        </label>
+                        {{ form.end_date }}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Production Line</span>
+                        </label>
+                        {{ form.production_line }}
+                    </div>
+                    <div class="form-control md:col-span-3">
+                        <button type="submit" class="btn btn-primary btn-lg">Generate Comprehensive Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if report %}
+        <!-- Report Header -->
+        <div class="card bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-xl mb-8">
+            <div class="card-body">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-bold">Efficiency Report</h2>
+                        <p class="text-lg opacity-90 mt-2">
+                            {{ report.period.start_date|date:"M d, Y" }} - {{ report.period.end_date|date:"M d, Y" }}
+                        </p>
+                        <p class="text-sm opacity-75">{{ report.period.production_line }}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="btn btn-ghost btn-sm">📊 Full Analysis</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Summary -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="card-title text-2xl mb-6">Production Summary</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="stat bg-blue-50 rounded-lg p-4">
+                        <div class="stat-figure text-blue-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-title text-blue-800">Total Production</div>
+                        <div class="stat-value text-2xl text-blue-600">
+                            {{ report.production_summary.total_production|floatformat:0|default:"0" }}
+                        </div>
+                        <div class="stat-desc text-blue-700">Good Products (packs)</div>
+                    </div>
+
+                    <div class="stat bg-green-50 rounded-lg p-4">
+                        <div class="stat-figure text-green-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-title text-green-800">Average OEE</div>
+                        <div class="stat-value text-2xl text-green-600">
+                            {{ report.production_summary.avg_oee|floatformat:1|default:"0" }}%
+                        </div>
+                        <div class="stat-desc text-green-700">Overall Equipment Effectiveness</div>
+                    </div>
+
+                    <div class="stat bg-orange-50 rounded-lg p-4">
+                        <div class="stat-figure text-orange-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-title text-orange-800">Total Downtime</div>
+                        <div class="stat-value text-2xl text-orange-600">
+                            {{ report.production_summary.total_downtime|floatformat:0|default:"0" }}
+                        </div>
+                        <div class="stat-desc text-orange-700">Minutes</div>
+                    </div>
+
+                    <div class="stat bg-purple-50 rounded-lg p-4">
+                        <div class="stat-figure text-purple-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-title text-purple-800">Production Runs</div>
+                        <div class="stat-value text-2xl text-purple-600">
+                            {{ report.production_summary.total_runs|default:"0" }}
+                        </div>
+                        <div class="stat-desc text-purple-700">Total Runs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            <!-- OEE Trend -->
+            {% if report.oee_analysis %}
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">OEE Trend Analysis</h3>
+                    <div class="h-64">
+                        <canvas id="oeeAnalysisChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Downtime Analysis -->
+            {% if report.downtime_analysis %}
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">Top Downtime Reasons</h3>
+                    <div class="h-64">
+                        <canvas id="downtimeAnalysisChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Detailed Analysis Tables -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <!-- OEE Performance Table -->
+            {% if report.oee_analysis %}
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">Daily OEE Performance</h3>
+                    <div class="overflow-x-auto">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th class="text-center">OEE</th>
+                                    <th class="text-center">Avail</th>
+                                    <th class="text-center">Perf</th>
+                                    <th class="text-center">Quality</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in report.oee_analysis|slice:":7" %}
+                                <tr>
+                                    <td class="text-xs">{{ item.production_run__date|date:"M d" }}</td>
+                                    <td class="text-center font-bold {% if item.avg_oee >= 85 %}text-green-600{% elif item.avg_oee >= 70 %}text-blue-600{% elif item.avg_oee >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                        {{ item.avg_oee|floatformat:0|default:"0" }}%
+                                    </td>
+                                    <td class="text-center text-xs">{{ item.avg_availability|floatformat:0|default:"0" }}%</td>
+                                    <td class="text-center text-xs">{{ item.avg_performance|floatformat:0|default:"0" }}%</td>
+                                    <td class="text-center text-xs">{{ item.avg_quality|floatformat:0|default:"0" }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if report.oee_analysis|length > 7 %}
+                    <div class="text-center mt-2">
+                        <span class="text-xs text-gray-500">Showing first 7 days</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Downtime Reasons Table -->
+            {% if report.downtime_analysis %}
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">Downtime Breakdown</h3>
+                    <div class="overflow-x-auto">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Duration</th>
+                                    <th class="text-center">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in report.downtime_analysis|slice:":7" %}
+                                <tr>
+                                    <td>
+                                        <span class="badge badge-outline badge-xs font-mono">{{ item.code }}</span>
+                                        
+                                    </td>
+                                    <td class="font-bold {% if item.total_duration > 120 %}text-red-600{% elif item.total_duration > 60 %}text-orange-600{% else %}text-green-600{% endif %}">
+                                        {{ item.total_duration }} min
+                                    </td>
+                                    <td class="text-center">{{ item.occurrence_count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if report.downtime_analysis|length > 7 %}
+                    <div class="text-center mt-2">
+                        <span class="text-xs text-gray-500">Top 7 reasons</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Action Items and Recommendations -->
+        <div class="card bg-base-100 shadow-xl mt-8">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-4">Key Insights & Recommendations</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-lg text-green-600">Strengths</h4>
+                        <ul class="space-y-2">
+                            {% if report.production_summary.avg_oee >= 70 %}
+                            <li class="flex items-start gap-2">
+                                <span class="text-green-500">✓</span>
+                                <span class="text-sm">Good OEE performance ({{ report.production_summary.avg_oee|floatformat:1 }}%)</span>
+                            </li>
+                            {% endif %}
+                            {% if report.production_summary.total_runs > 10 %}
+                            <li class="flex items-start gap-2">
+                                <span class="text-green-500">✓</span>
+                                <span class="text-sm">High production activity ({{ report.production_summary.total_runs }} runs)</span>
+                            </li>
+                            {% endif %}
+                            <li class="flex items-start gap-2">
+                                <span class="text-green-500">✓</span>
+                                <span class="text-sm">Production data is being tracked consistently</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-lg text-orange-600">Improvement Opportunities</h4>
+                        <ul class="space-y-2">
+                            {% if report.production_summary.avg_oee < 70 %}
+                            <li class="flex items-start gap-2">
+                                <span class="text-orange-500">!</span>
+                                <span class="text-sm">Focus on improving OEE from {{ report.production_summary.avg_oee|floatformat:1 }}% to >70%</span>
+                            </li>
+                            {% endif %}
+                            {% if report.downtime_analysis %}
+                            <li class="flex items-start gap-2">
+                                <span class="text-orange-500">!</span>
+                                <span class="text-sm">Address top downtime reason: {{ report.downtime_analysis.0.code }}</span>
+                            </li>
+                            {% endif %}
+                            <li class="flex items-start gap-2">
+                                <span class="text-orange-500">!</span>
+                                <span class="text-sm">Implement preventive maintenance schedule</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-orange-500">!</span>
+                                <span class="text-sm">Consider operator training for efficiency improvement</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- No Data State -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center py-16">
+                <div class="text-6xl mb-4">📋</div>
+                <h3 class="text-2xl font-bold mb-2">No Report Data Available</h3>
+                <p class="text-gray-600 mb-6">Please select a date range and optionally a production line to generate the comprehensive efficiency report.</p>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <span class="badge badge-outline">Select start date</span>
+                    <span class="badge badge-outline">Select end date</span>
+                    <span class="badge badge-outline">Choose production line (optional)</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+{% if report %}
+// Colors
+const colors = {
+    primary: '#3B82F6',
+    success: '#10B981',
+    warning: '#F59E0B',
+    error: '#EF4444',
+    info: '#06B6D4'
+};
+
+// OEE Analysis Chart
+{% if report.oee_analysis %}
+const ctxOEE = document.getElementById('oeeAnalysisChart').getContext('2d');
+const oeeAnalysisChart = new Chart(ctxOEE, {
+    type: 'line',
+    data: {
+        labels: [
+            {% for item in report.oee_analysis|slice:":10" %}
+                '{{ item.production_run__date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'OEE %',
+            data: [
+                {% for item in report.oee_analysis|slice:":10" %}
+                    {{ item.avg_oee|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            borderColor: colors.primary,
+            backgroundColor: colors.primary + '20',
+            tension: 0.1,
+            fill: true,
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+{% endif %}
+
+// Downtime Analysis Chart
+{% if report.downtime_analysis %}
+const ctxDowntime = document.getElementById('downtimeAnalysisChart').getContext('2d');
+const downtimeAnalysisChart = new Chart(ctxDowntime, {
+    type: 'bar',
+    data: {
+        labels: [
+            {% for item in report.downtime_analysis|slice:":5" %}
+                '{{ item.code }}'{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Duration (min)',
+            data: [
+                {% for item in report.downtime_analysis|slice:":5" %}
+                    {{ item.total_duration }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            backgroundColor: [
+                colors.error + '80',
+                colors.warning + '80', 
+                colors.info + '80',
+                colors.success + '80',
+                colors.primary + '80'
+            ],
+            borderColor: [
+                colors.error,
+                colors.warning,
+                colors.info,
+                colors.success,
+                colors.primary
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value + ' min';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+{% endif %}
+{% endif %}
+</script>
+{% endblock %}

@@ -7,10 +7,10 @@ from django.utils import timezone
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from .models import (
-    ProductionRun, ProductionReport, ManufacturingOrder, 
-    ProductionLine, Product, PackageSize, Shift
+    ProductionRun, ProductionReport, StopEvent,
+    ProductionLine, Product, PackageSize, Shift, Machine, DowntimeCode
 )
-from .forms import ProductionRunForm, PackagingMaterialForm, UtilityForm
+from .forms import ProductionRunForm, PackagingMaterialForm, UtilityForm, StopEventForm
 
 class DashboardView(LoginRequiredMixin, ListView):
     model = ProductionRun
@@ -35,11 +35,24 @@ class CreateProductionRunView(LoginRequiredMixin, CreateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        production_line = None
+        
         if self.request.POST:
-            context['packaging_form'] = PackagingMaterialForm(self.request.POST)
+            # Try to get production line from POST data
+            production_line_id = self.request.POST.get('production_line')
+            if production_line_id:
+                try:
+                    production_line = ProductionLine.objects.get(id=production_line_id)
+                except ProductionLine.DoesNotExist:
+                    pass
+            
+            context['packaging_form'] = PackagingMaterialForm(
+                self.request.POST, 
+                production_line=production_line
+            )
             context['utility_form'] = UtilityForm(self.request.POST)
         else:
-            context['packaging_form'] = PackagingMaterialForm()
+            context['packaging_form'] = PackagingMaterialForm(production_line=production_line)
             context['utility_form'] = UtilityForm()
         return context
     
@@ -102,7 +115,6 @@ class UpdateProductionRunView(LoginRequiredMixin, UpdateView):
             print(f"  - Start: {self.object.production_start}")
             print(f"  - End: {self.object.production_end}")
             print(f"  - Product: {self.object.product}")
-            print(f"  - Order: {self.object.order_number}")
             print(f"  - Line: {self.object.production_line}")
             print(f"  - Package: {self.object.package_size}")
         
@@ -117,11 +129,32 @@ class UpdateProductionRunView(LoginRequiredMixin, UpdateView):
         except:
             utility_instance = None
         
+        # Get production line for conditional field display
+        production_line = None
         if self.request.POST:
-            context['packaging_form'] = PackagingMaterialForm(self.request.POST, instance=packaging_instance)
+            # Try to get production line from POST data
+            production_line_id = self.request.POST.get('production_line')
+            if production_line_id:
+                try:
+                    production_line = ProductionLine.objects.get(id=production_line_id)
+                except ProductionLine.DoesNotExist:
+                    pass
+        else:
+            # Get from current object
+            production_line = self.object.production_line if self.object else None
+
+        if self.request.POST:
+            context['packaging_form'] = PackagingMaterialForm(
+                self.request.POST, 
+                instance=packaging_instance,
+                production_line=production_line
+            )
             context['utility_form'] = UtilityForm(self.request.POST, instance=utility_instance)
         else:
-            context['packaging_form'] = PackagingMaterialForm(instance=packaging_instance)
+            context['packaging_form'] = PackagingMaterialForm(
+                instance=packaging_instance,
+                production_line=production_line
+            )
             context['utility_form'] = UtilityForm(instance=utility_instance)
         
         return context
@@ -185,44 +218,64 @@ class FinalizeProductionRunView(LoginRequiredMixin, View):
             messages.error(request, f"Error finalizing production run: {str(e)}")
             return redirect('manufacturing:production_run_detail', pk=pk)
 
+class CreateStopEventView(LoginRequiredMixin, CreateView):
+    model = StopEvent
+    form_class = StopEventForm
+    template_name = 'manufacturing/create_stop_event.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.production_run = get_object_or_404(ProductionRun, pk=kwargs['production_run_pk'])
+        
+        # Check if user has permission to add stop events to this production run
+        if self.production_run.shift_teamleader != request.user:
+            messages.error(request, "You can only add stop events to your own production runs.")
+            return redirect('manufacturing:dashboard')
+            
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['production_run'] = self.production_run
+        
+        # Filter machines to only show those from the production run's line
+        machines = Machine.objects.filter(
+            production_line=self.production_run.production_line,
+            is_active=True
+        )
+        context['machines'] = machines
+        
+        return context
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        
+        # Filter machines to only show those from the production run's line
+        form.fields['machine'].queryset = Machine.objects.filter(
+            production_line=self.production_run.production_line,
+            is_active=True
+        )
+        
+        # Filter codes to show all initially (will be filtered by HTMX)
+        form.fields['code'].queryset = DowntimeCode.objects.all()
+        
+        # Add HTMX attributes for dynamic filtering
+        form.fields['machine'].widget.attrs.update({
+            'hx-get': reverse_lazy('manufacturing:htmx_machine_codes'),
+            'hx-target': '#id_code',
+            'hx-trigger': 'change'
+        })
+        
+        return form
+    
+    def form_valid(self, form):
+        form.instance.production_run = self.production_run
+        messages.success(self.request, 'Stop event added successfully!')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('manufacturing:production_run_detail', kwargs={'pk': self.production_run.pk})
 
-# HTMX Views for Dynamic Form Updates
-def htmx_product_info(request):
-    """Update product and package size fields based on manufacturing order"""
-    order_id = request.GET.get('order_number')
-    
-    # Debug logging
-    print(f"DEBUG: HTMX product_info called with order_id: {order_id}")
-    
-    context = {
-        'selected_product': None,
-        'selected_package': None,
-        'products': Product.objects.all(),
-        'packages': PackageSize.objects.all(),
-        'order_info': None
-    }
-    
-    if order_id:
-        try:
-            order = ManufacturingOrder.objects.get(id=order_id)
-            print(f"DEBUG: Found order: {order.order_number}, product: {order.product.name}, package: {order.package_size}")
-            context.update({
-                'selected_product': order.product,
-                'selected_package': order.package_size,
-                'order_info': {
-                    'product_name': order.product.name,
-                    'package_size': f"{order.package_size.size} {order.package_size.get_package_type_display()}",
-                    'quantity': order.quantity
-                }
-            })
-        except ManufacturingOrder.DoesNotExist:
-            print(f"DEBUG: Manufacturing order with id {order_id} not found")
-    else:
-        print("DEBUG: No order_id provided")
-    
-    html = render_to_string('manufacturing/htmx/order_product_update.html', context)
-    print(f"DEBUG: Returning HTML length: {len(html)}")
-    return HttpResponse(html)
+
 
 
 def htmx_product_packages(request):
@@ -258,5 +311,82 @@ def htmx_machine_codes(request):
     
     html = render_to_string('manufacturing/htmx/downtime_codes.html', {
         'codes': codes
+    })
+    return HttpResponse(html)
+
+def htmx_packaging_fields(request):
+    """Get packaging fields based on production line type"""
+    production_line_id = request.GET.get('production_line')
+    production_run_id = request.GET.get('production_run_id') or request.POST.get('production_run_id')  # For updates
+    production_line = None
+    packaging_instance = None
+    
+    if production_line_id:
+        try:
+            production_line = ProductionLine.objects.get(id=production_line_id)
+        except ProductionLine.DoesNotExist:
+            pass
+    
+    # Get existing packaging data if updating
+    if production_run_id:
+        try:
+            production_run = ProductionRun.objects.get(id=production_run_id)
+            try:
+                packaging_instance = production_run.packaging_material
+            except:
+                packaging_instance = None
+        except ProductionRun.DoesNotExist:
+            pass
+    
+    # Create packaging form with the selected production line and instance
+    packaging_form = PackagingMaterialForm(
+        production_line=production_line,
+        instance=packaging_instance
+    )
+    
+    html = render_to_string('manufacturing/htmx/packaging_fields.html', {
+        'packaging_form': packaging_form,
+        'production_line': production_line
+    })
+    return HttpResponse(html)
+
+def htmx_generate_batch_number(request):
+    """Generate batch number based on selected form fields"""
+    from datetime import datetime
+    from .models import Product, PackageSize, Shift
+    
+    # Get form parameters
+    product_id = request.GET.get('product')
+    package_size_id = request.GET.get('package_size') 
+    shift_id = request.GET.get('shift')
+    date_str = request.GET.get('date')
+    
+    batch_number = ""
+    
+    try:
+        # Parse components
+        product = Product.objects.get(id=product_id) if product_id else None
+        package_size = PackageSize.objects.get(id=package_size_id) if package_size_id else None
+        shift = Shift.objects.get(id=shift_id) if shift_id else None
+        
+        # Parse date
+        date_obj = None
+        if date_str:
+            try:
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        # Generate batch number if all components are available
+        if all([product, package_size, shift, date_obj]):
+            batch_number = ProductionRun.generate_batch_number(
+                product, package_size, shift, date_obj
+            )
+            
+    except (Product.DoesNotExist, PackageSize.DoesNotExist, Shift.DoesNotExist):
+        pass
+    
+    html = render_to_string('manufacturing/htmx/batch_number.html', {
+        'batch_number': batch_number
     })
     return HttpResponse(html)

@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Weekly Production Summary</h1>
+                <p class="text-lg text-gray-600 mt-2">Comprehensive 7-day production performance analysis</p>
+            </div>
+            <div class="breadcrumbs text-sm">
+                <ul>
+                    <li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
+                    <li>Weekly Summary</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Filter Form -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Filter Options</h3>
+                <form method="get" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Week Start Date</span>
+                        </label>
+                        {{ form.week_start_date }}
+                        <label class="label">
+                            <span class="label-text-alt">Week will include 7 days starting from this date</span>
+                        </label>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Production Line</span>
+                        </label>
+                        {{ form.production_line }}
+                    </div>
+                    <div class="form-control md:col-span-2">
+                        <button type="submit" class="btn btn-primary">Generate Weekly Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if summary %}
+        <!-- Week Overview -->
+        <div class="card bg-gradient-to-r from-green-500 to-green-600 text-white shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="text-2xl font-bold mb-4">
+                    Week of {{ summary.week_start|date:"M d" }} - {{ summary.week_end|date:"M d, Y" }}
+                    {% if summary.production_line %}
+                        ({{ summary.production_line.name }})
+                    {% endif %}
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_production|floatformat:0|default:"0" }}</div>
+                        <div class="text-sm opacity-90 font-semibold">Total Production (packs)</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary.weekly_totals.avg_oee|floatformat:1|default:"0" }}%</div>
+                        <div class="text-sm opacity-90 font-semibold">Average OEE</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_downtime|floatformat:0|default:"0" }}</div>
+                        <div class="text-sm opacity-90 font-semibold">Total Downtime (min)</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_runs|default:"0" }}</div>
+                        <div class="text-sm opacity-90 font-semibold">Production Runs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Breakdown -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-6">Daily Breakdown</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-7 gap-4">
+                    {% for date, daily_data in summary.daily_summaries.items %}
+                    <div class="card bg-base-50 border {% if daily_data.daily_totals.total_production %}border-green-200{% else %}border-gray-200{% endif %}">
+                        <div class="card-body p-4">
+                            <div class="text-center">
+                                <div class="font-bold text-lg">{{ date|date:"D" }}</div>
+                                <div class="text-sm text-gray-600">{{ date|date:"M d" }}</div>
+                                
+                                <div class="divider my-2"></div>
+                                
+                                <div class="space-y-2">
+                                    <div>
+                                        <div class="text-lg font-bold {% if daily_data.daily_totals.total_production %}text-blue-600{% else %}text-gray-400{% endif %}">
+                                            {{ daily_data.daily_totals.total_production|floatformat:0|default:"0" }}
+                                        </div>
+                                        <div class="text-xs text-gray-500">Packs</div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="text-sm font-semibold {% if daily_data.daily_totals.avg_oee %}text-green-600{% else %}text-gray-400{% endif %}">
+                                            {{ daily_data.daily_totals.avg_oee|floatformat:1|default:"0" }}%
+                                        </div>
+                                        <div class="text-xs text-gray-500">OEE</div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="text-sm {% if daily_data.daily_totals.total_downtime %}text-orange-600{% else %}text-gray-400{% endif %}">
+                                            {{ daily_data.daily_totals.total_downtime|floatformat:0|default:"0" }}
+                                        </div>
+                                        <div class="text-xs text-gray-500">Downtime (min)</div>
+                                    </div>
+                                </div>
+                                
+                                {% if daily_data.daily_totals.total_runs %}
+                                <div class="mt-3">
+                                    <span class="badge badge-success badge-xs">{{ daily_data.daily_totals.total_runs }} runs</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Trends Chart -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-4">Weekly Production Trend</h3>
+                <div class="h-64">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- No Data State -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center py-16">
+                <div class="text-6xl mb-4">📊</div>
+                <h3 class="text-2xl font-bold mb-2">No Data Available</h3>
+                <p class="text-gray-600 mb-6">Please select a week start date and optionally a production line to view weekly summary data.</p>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <span class="badge badge-outline">Select week start date</span>
+                    <span class="badge badge-outline">Choose production line (optional)</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Weekly Trend Chart
+{% if summary %}
+const ctx = document.getElementById('weeklyChart').getContext('2d');
+const weeklyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: [
+            {% for date, daily_data in summary.daily_summaries.items %}
+                '{{ date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        datasets: [
+            {
+                label: 'Production (Packs)',
+                data: [
+                    {% for date, daily_data in summary.daily_summaries.items %}
+                        {{ daily_data.daily_totals.total_production|floatformat:0|default:"0" }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: 'rgb(59, 130, 246)',
+                borderWidth: 1,
+                yAxisID: 'y'
+            },
+            {
+                label: 'OEE %',
+                data: [
+                    {% for date, daily_data in summary.daily_summaries.items %}
+                        {{ daily_data.daily_totals.avg_oee|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                type: 'line',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderColor: 'rgb(16, 185, 129)',
+                borderWidth: 2,
+                tension: 0.1,
+                yAxisID: 'y1'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Production (Packs)'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'OEE %'
+                },
+                grid: {
+                    drawOnChartArea: false,
+                },
+                max: 100
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Production Volume vs OEE Percentage'
+            },
+            legend: {
+                position: 'top'
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

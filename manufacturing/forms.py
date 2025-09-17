@@ -1,7 +1,7 @@
 from django import forms
 from .models import (
     ProductionRun, PackagingMaterial, Utility, StopEvent,
-    ManufacturingOrder, ProductionLine, Product, PackageSize, Shift
+    ProductionLine, Product, PackageSize, Shift
 )
 
 class ProductionRunForm(forms.ModelForm):
@@ -13,58 +13,70 @@ class ProductionRunForm(forms.ModelForm):
         # Apply DaisyUI classes and HTMX attributes to existing widgets
         # This preserves existing values while adding styling and functionality
         
-        # Order Number field
-        if 'order_number' in self.fields:
-            self.fields['order_number'].widget.attrs.update({
-                'class': 'select select-bordered w-full',
-                'hx-get': '/manufacturing/htmx/product-info/',
-                'hx-target': '#product-info',
-                'hx-trigger': 'change',
-                'hx-swap': 'innerHTML'
-            })
         
-        # Production Batch Number
+        # Production Batch Number - Auto-generated, readonly
         if 'production_batch_number' in self.fields:
             self.fields['production_batch_number'].widget.attrs.update({
-                'class': 'input input-bordered w-full',
-                'placeholder': 'Enter batch number'
+                'class': 'input input-bordered w-full bg-base-200',
+                'readonly': True,
+                'placeholder': 'Auto-generated from selected fields'
             })
         
         # Date field
         if 'date' in self.fields:
             self.fields['date'].widget = forms.DateInput(attrs={
                 'type': 'date',
-                'class': 'input input-bordered w-full'
+                'class': 'input input-bordered w-full',
+                'hx-get': '/manufacturing/htmx/generate-batch-number/',
+                'hx-target': '#batch-number-container',
+                'hx-trigger': 'change',
+                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
             })
             if self.instance and self.instance.pk and self.instance.date:
                 self.fields['date'].widget.attrs['value'] = self.instance.date.strftime('%Y-%m-%d')
         
         # Production Line
         if 'production_line' in self.fields:
-            self.fields['production_line'].widget.attrs.update({
-                'class': 'select select-bordered w-full'
-            })
+            htmx_attrs = {
+                'class': 'select select-bordered w-full',
+                'hx-get': '/manufacturing/htmx/packaging-fields/',
+                'hx-target': '#packaging-fields-container',
+                'hx-trigger': 'change'
+            }
+            # Add production_run_id for updates to preserve existing data
+            if self.instance and self.instance.pk:
+                htmx_attrs['hx-include'] = '[name="production_line"], [name="production_run_id"]'
+            
+            self.fields['production_line'].widget.attrs.update(htmx_attrs)
         
         # Product
         if 'product' in self.fields:
             self.fields['product'].widget.attrs.update({
                 'class': 'select select-bordered w-full',
-                'hx-get': '/manufacturing/htmx/product-packages/',
-                'hx-target': '#package-options',
+                'hx-get': '/manufacturing/htmx/generate-batch-number/',
+                'hx-target': '#batch-number-container',
                 'hx-trigger': 'change',
-                'hx-swap': 'innerHTML'
+                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
             })
         
         # Package Size
         if 'package_size' in self.fields:
             self.fields['package_size'].widget.attrs.update({
-                'class': 'select select-bordered w-full'
+                'class': 'select select-bordered w-full',
+                'hx-get': '/manufacturing/htmx/generate-batch-number/',
+                'hx-target': '#batch-number-container',
+                'hx-trigger': 'change',
+                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
             })
         
         # Shift
         if 'shift' in self.fields:
             self.fields['shift'].widget.attrs.update({
-                'class': 'select select-bordered w-full'
+                'class': 'select select-bordered w-full',
+                'hx-get': '/manufacturing/htmx/generate-batch-number/',
+                'hx-target': '#batch-number-container',
+                'hx-trigger': 'change',
+                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
             })
         
         # Production Start
@@ -121,14 +133,30 @@ class ProductionRunForm(forms.ModelForm):
             pass
         else:
             # For new forms, filter active items only
-            self.fields['order_number'].queryset = ManufacturingOrder.objects.filter(
-                status__in=['Pending', 'In Progress']
-            )
             self.fields['production_line'].queryset = ProductionLine.objects.filter(is_active=True)
             self.fields['product'].queryset = Product.objects.all()
             self.fields['package_size'].queryset = PackageSize.objects.all()
             self.fields['shift'].queryset = Shift.objects.all()
             
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Auto-generate batch number if all required fields are present
+        product = cleaned_data.get('product')
+        package_size = cleaned_data.get('package_size') 
+        shift = cleaned_data.get('shift')
+        date = cleaned_data.get('date')
+        
+        if all([product, package_size, shift, date]):
+            # Generate batch number if not editing existing instance
+            if not (self.instance and self.instance.pk):
+                batch_number = ProductionRun.generate_batch_number(
+                    product, package_size, shift, date
+                )
+                cleaned_data['production_batch_number'] = batch_number
+        
+        return cleaned_data
+    
     def save(self, commit=True):
         instance = super().save(commit=False)
         if self.user and not instance.shift_teamleader_id:
@@ -140,7 +168,7 @@ class ProductionRunForm(forms.ModelForm):
     class Meta:
         model = ProductionRun
         fields = [
-            'order_number', 'production_batch_number', 'date', 
+            'production_batch_number', 'date',
             'production_line', 'product', 'package_size', 'shift',
             'production_start', 'production_end', 'filler_output', 'final_syrup_volume',
             'mixing_ratio', 'good_products_pack'
@@ -154,6 +182,7 @@ class ProductionRunForm(forms.ModelForm):
 class PackagingMaterialForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
+        self.production_line = kwargs.pop('production_line', None)
         super().__init__(*args, **kwargs)
         
         # Apply DaisyUI classes to all fields
@@ -165,6 +194,65 @@ class PackagingMaterialForm(forms.ModelForm):
                 })
             elif isinstance(field.widget, forms.TextInput):
                 field.widget.attrs.update({'class': 'input input-bordered w-full'})
+        
+        # Conditionally show/hide fields based on production line
+        self._setup_conditional_fields()
+    
+    def _setup_conditional_fields(self):
+        """Setup conditional fields based on production line type"""
+        if not self.production_line:
+            return
+            
+        line_name = str(self.production_line.name).upper() if hasattr(self.production_line, 'name') else str(self.production_line).upper()
+        is_can_line = 'CAN' in line_name
+        
+        # PET line specific fields
+        pet_fields = [
+            'qty_preform_used', 'qty_cap_used', 'qty_preform_reject', 
+            'qty_bottle_reject', 'qty_cap_reject'
+        ]
+        
+        # Can line specific fields  
+        can_fields = [
+            'qty_can_used', 'qty_empty_can_reject', 'qty_can_cover_used',
+            'qty_can_cover_reject', 'qty_carton_used', 'qty_carton_reject', 
+            'qty_filled_can_reject'
+        ]
+        
+        if is_can_line:
+            # Hide PET fields for CAN line
+            for field in pet_fields:
+                if field in self.fields:
+                    self.fields[field].widget = forms.HiddenInput()
+                    self.fields[field].required = False
+        else:
+            # Hide CAN fields for other lines  
+            for field in can_fields:
+                if field in self.fields:
+                    self.fields[field].widget = forms.HiddenInput()
+                    self.fields[field].required = False
+    
+    @property
+    def pet_fields(self):
+        """Return PET line specific fields"""
+        return [
+            'qty_preform_used', 'qty_cap_used', 'qty_product_reject',
+            'qty_preform_reject', 'qty_bottle_reject', 'qty_cap_reject'
+        ]
+    
+    @property 
+    def can_fields(self):
+        """Return CAN line specific fields"""
+        return [
+            'qty_can_used', 'qty_empty_can_reject', 'qty_can_cover_used',
+            'qty_can_cover_reject', 'qty_carton_used', 'qty_carton_reject',
+            'qty_filled_can_reject'
+        ]
+    
+    @property
+    def common_fields(self):
+        """Return common packaging fields"""
+        return ['label_reject_g', 'shrink_wrap_kg', 'stretch_wrap_g']
     
     class Meta:
         model = PackagingMaterial

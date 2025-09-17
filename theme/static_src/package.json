@@ -4,10 +4,13 @@
   "description": "",
   "scripts": {
     "start": "npm run dev",
-    "build": "npm run build:clean && npm run build:tailwind",
-    "build:clean": "rimraf ../static/css/dist",
+    "build": "npm run build:clean && npm run build:tailwind && npm run build:js",
+    "build:clean": "rimraf ../static/css/dist && rimraf ../static/js/dist",
     "build:tailwind": "cross-env NODE_ENV=production postcss ./src/styles.css -o ../static/css/dist/styles.css --minify",
-    "dev": "cross-env NODE_ENV=development postcss ./src/styles.css -o ../static/css/dist/styles.css --watch"
+    "build:js": "esbuild ./src/app.js --bundle --minify --outfile=../static/js/dist/app.js",
+    "dev": "npm run dev:css & npm run dev:js",
+    "dev:css": "cross-env NODE_ENV=development postcss ./src/styles.css -o ../static/css/dist/styles.css --watch",
+    "dev:js": "esbuild ./src/app.js --bundle --outfile=../static/js/dist/app.js --watch"
   },
   "keywords": [],
   "author": "",
@@ -16,11 +19,15 @@
     "@tailwindcss/postcss": "^4.1.11",
     "cross-env": "^7.0.3",
     "daisyui": "^5.1.9",
+    "esbuild": "^0.25.9",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
     "postcss-nested": "^7.0.2",
     "postcss-simple-vars": "^7.0.1",
     "rimraf": "^6.0.1",
     "tailwindcss": "^4.1.11"
+  },
+  "dependencies": {
+    "alpinejs": "^3.15.0"
   }
 }

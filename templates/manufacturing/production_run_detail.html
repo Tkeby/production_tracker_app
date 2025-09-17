@@ -24,8 +24,8 @@
                                 </div>
                             </div>
                             <div>
-                                <h1 class="text-4xl font-bold">{{ object.production_batch_number }}</h1>
-                                <p class="text-lg text-base-content/70">{{ object.product.name }} - {{ object.package_size }}</p>
+                                <h1 class="text-4xl font-bold">{{ object.product.name }} - {{ object.package_size }}</h1>
+                                <p class="text-lg text-base-content/70">{{ object.production_batch_number }}</p>
                             </div>
                         </div>
                         
@@ -111,9 +111,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
                 </div>
-                <div class="stat-title">Filler Output</div>
-                <div class="stat-value text-secondary">{{ object.filler_output|floatformat:0 }}</div>
-                <div class="stat-desc">Units per hour</div>
+                <div class="stat-title">Syrup Yield</div>
+                <div class="stat-value text-secondary">{{ object.report.syrup_yield_percentage|floatformat:0 }}</div>
+                <div class="stat-desc">%</div>
             </div>
             
             <div class="stat">
@@ -189,7 +189,10 @@
                     </h3>
                     
                     <div class="text-center mb-6">
-                        <div class="radial-progress text-primary text-6xl font-bold" style="--value:{{ object.report.oee|floatformat:0 }}; --size:8rem; --thickness:8px;">
+                        <!-- <div class="radial-progress text-primary text-6xl font-bold" style="--value:{{ object.report.oee|floatformat:0 }}; --size:8rem; --thickness:8px;">
+                            {{ object.report.oee }}%
+                        </div> -->
+                        <div class="text-primary text-6xl font-bold mt-4" >
                             {{ object.report.oee }}%
                         </div>
                         <p class="text-lg font-semibold mt-2">Overall OEE</p>
@@ -248,32 +251,167 @@
                         <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                         </svg>
-                        Packaging Material
+                        Packaging Materials
+                        {% with line_name=object.production_line.name|upper %}
+                            {% if "CAN" in line_name %}
+                                <div class="badge badge-warning badge-sm">CAN Line</div>
+                            {% else %}
+                                <div class="badge badge-info badge-sm">PET Line</div>
+                            {% endif %}
+                        {% endwith %}
                     </h3>
                     {% if object.packaging_material %}
                         <div class="overflow-x-auto">
                             <table class="table table-compact">
                                 <tbody>
-                                    <tr>
-                                        <td>Preforms Used</td>
-                                        <td class="text-right font-mono">{{ object.packaging_material.qty_preform_used|floatformat:0 }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Caps Used</td>
-                                        <td class="text-right font-mono">{{ object.packaging_material.qty_cap_used|floatformat:0 }}</td>
-                                    </tr>
-                                    <tr class="text-error">
-                                        <td>Product Reject</td>
-                                        <td class="text-right font-mono">{{ object.packaging_material.qty_product_reject|floatformat:0 }}</td>
-                                    </tr>
-                                    <tr class="text-error">
-                                        <td>Preform Reject</td>
-                                        <td class="text-right font-mono">{{ object.packaging_material.qty_preform_reject|floatformat:0 }}</td>
-                                    </tr>
-                                    <tr class="text-error">
-                                        <td>Bottle Reject</td>
-                                        <td class="text-right font-mono">{{ object.packaging_material.qty_bottle_reject|floatformat:0 }}</td>
-                                    </tr>
+                                    {% with line_name=object.production_line.name|upper %}
+                                        {% if "CAN" in line_name %}
+                                            <!-- CAN Line Specific Fields -->
+                                            {% if object.packaging_material.qty_can_used %}
+                                            <tr>
+                                                <td>Cans Used</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_used|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            {% if object.packaging_material.qty_can_cover_used %}
+                                            <tr>
+                                                <td>Can Covers Used</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_cover_used|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            {% if object.packaging_material.qty_carton_used %}
+                                            <tr>
+                                                <td>Cartons Used</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_carton_used|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            <!-- Separator for Rejects -->
+                                            <!-- {% if object.packaging_material.qty_empty_can_reject or object.packaging_material.qty_can_cover_reject or object.packaging_material.qty_carton_reject or object.packaging_material.qty_filled_can_reject %}
+                                            <tr>
+                                                <td colspan="2" class="text-center text-sm text-base-content/50 py-2">
+                                                    <div class="divider divider-error">Rejects</div>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                             -->
+                                            <!-- CAN Line Rejects -->
+                                            {% if object.packaging_material.qty_empty_can_reject %}
+                                            <tr class="text-error">
+                                                <td>Empty Can Rejects</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_empty_can_reject|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            {% if object.packaging_material.qty_can_cover_reject %}
+                                            <tr class="text-error">
+                                                <td>Can Cover Rejects</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_cover_reject|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            {% if object.packaging_material.qty_carton_reject %}
+                                            <tr class="text-error">
+                                                <td>Carton Rejects</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_carton_reject|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            {% if object.packaging_material.qty_filled_can_reject %}
+                                            <tr class="text-error">
+                                                <td>Filled Can Rejects</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_filled_can_reject|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                        {% else %}
+                                            <!-- PET Line Specific Fields -->
+                                            {% if object.packaging_material.qty_preform_used %}
+                                            <tr>
+                                                <td>Preforms Used</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_preform_used|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            {% if object.packaging_material.qty_cap_used %}
+                                            <tr>
+                                                <td>Caps Used</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_cap_used|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            <!-- Separator for Rejects -->
+                                            <!-- {% if object.packaging_material.qty_preform_reject or object.packaging_material.qty_bottle_reject or object.packaging_material.qty_cap_reject %}
+                                            <tr>
+                                                <td colspan="2" class="text-center text-sm text-base-content/50 py-2">
+                                                    <div class="divider divider-error">Rejects</div>
+                                                </td>
+                                            </tr>
+                                            {% endif %} -->
+                                            
+                                            <!-- PET Line Rejects -->
+                                            {% if object.packaging_material.qty_preform_reject %}
+                                            <tr class="text-error">
+                                                <td>Preform Rejects</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_preform_reject|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            {% if object.packaging_material.qty_bottle_reject %}
+                                            <tr class="text-error">
+                                                <td>Bottle Rejects</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_bottle_reject|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            
+                                            {% if object.packaging_material.qty_cap_reject %}
+                                            <tr class="text-error">
+                                                <td>Cap Rejects</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_cap_reject|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endif %}
+                                        {% endif %}
+                                        
+                                        <!-- Separator for Common Fields -->
+                                        <!-- {% if object.packaging_material.qty_product_reject or object.packaging_material.label_reject_g or object.packaging_material.shrink_wrap_kg or object.packaging_material.stretch_wrap_g %}
+                                        <tr>
+                                            <td colspan="2" class="text-center text-sm text-base-content/50 py-2">
+                                                <div class="divider divider-neutral">Common Materials</div>
+                                            </td>
+                                        </tr>
+                                        {% endif %} -->
+                                        
+                                        <!-- Common Fields (Always Show) -->
+                                        {% if object.packaging_material.qty_product_reject %}
+                                        <tr class="text-error">
+                                            <td>Product Rejects</td>
+                                            <td class="text-right font-mono">{{ object.packaging_material.qty_product_reject|floatformat:0 }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        
+                                        {% if object.packaging_material.label_reject_g %}
+                                        <tr class="text-error">
+                                            <td>Label Reject</td>
+                                            <td class="text-right font-mono">{{ object.packaging_material.label_reject_g|floatformat:2 }} g</td>
+                                        </tr>
+                                        {% endif %}
+                                        
+                                        {% if object.packaging_material.shrink_wrap_kg %}
+                                        <tr>
+                                            <td>Shrink Wrap</td>
+                                            <td class="text-right font-mono">{{ object.packaging_material.shrink_wrap_kg|floatformat:2 }} kg</td>
+                                        </tr>
+                                        {% endif %}
+                                        
+                                        {% if object.packaging_material.stretch_wrap_g %}
+                                        <tr>
+                                            <td>Stretch Wrap</td>
+                                            <td class="text-right font-mono">{{ object.packaging_material.stretch_wrap_g|floatformat:2 }} g</td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endwith %}
                                 </tbody>
                             </table>
                         </div>
@@ -339,16 +477,30 @@
         </div>
 
         <!-- Stop Events -->
-        {% if object.stop_events.exists %}
         <div class="card bg-base-100 shadow-xl mb-6">
             <div class="card-body">
-                <h3 class="card-title">
-                    <svg class="w-6 h-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5C2.962 17.333 3.924 19 5.464 19z"></path>
-                    </svg>
-                    Downtime Events
-                    <div class="badge badge-error">{{ object.stop_events.count }}</div>
-                </h3>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="card-title">
+                        <svg class="w-6 h-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5C2.962 17.333 3.924 19 5.464 19z"></path>
+                        </svg>
+                        Downtime Events
+                        {% if object.stop_events.exists %}
+                        <div class="badge badge-error">{{ object.stop_events.count }}</div>
+                        {% endif %}
+                    </h3>
+                    
+                    {% if not object.is_completed %}
+                    <a href="{% url 'manufacturing:create_stop_event' object.pk %}" class="btn btn-error btn-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Add Stop Event
+                    </a>
+                    {% endif %}
+                </div>
+                
+                {% if object.stop_events.exists %}
                 
                 <div class="overflow-x-auto">
                     <table class="table table-zebra">
@@ -372,7 +524,7 @@
                                     <div class="badge badge-error badge-outline">{{ event.code.code }}</div>
                                 </td>
                                 <td class="max-w-xs">
-                                    <div class="truncate" title="{{ event.reason }}">{{ event.reason }}</div>
+                                    <div class="truncate" title="{{ event.code.reason }}">{{ event.code.reason }}</div>
                                 </td>
                                 <td>
                                     <div class="badge badge-warning">{{ event.duration_minutes }}min</div>
@@ -385,9 +537,24 @@
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="text-center text-base-content/60 py-8">
+                    <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5C2.962 17.333 3.924 19 5.464 19z"></path>
+                    </svg>
+                    <p class="mb-4">No downtime events recorded</p>
+                    {% if not object.is_completed %}
+                    <a href="{% url 'manufacturing:create_stop_event' object.pk %}" class="btn btn-error btn-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Add First Stop Event
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
-        {% endif %}
 
         <!-- Navigation Actions -->
         <div class="flex justify-center">

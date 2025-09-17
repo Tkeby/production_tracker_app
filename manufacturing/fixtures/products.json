@@ -1,0 +1,109 @@
+{
+  "products": [
+    {
+      "name": "Energy (24Hr)",
+      "product_code": "ENERGY_24HR",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Energy Plus",
+      "product_code": "ENERGY_PLUS",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Bimbo",
+      "product_code": "BIMBO",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Classic Cola",
+      "product_code": "CLASSIC_COLA",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Cocktail",
+      "product_code": "COCKTAIL",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Lemon Lime",
+      "product_code": "LEMON_LIME",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Splash",
+      "product_code": "SPLASH",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Tamarind",
+      "product_code": "TAMARIND",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Tonic",
+      "product_code": "TONIC",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Bintu",
+      "product_code": "BINTU",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "M50-Energy",
+      "product_code": "M50_ENERGY",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Saha Fresh",
+      "product_code": "SAHA_FRESH",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Saha Orange",
+      "product_code": "SAHA_ORANGE",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Saha Cocktail",
+      "product_code": "SAHA_COCKTAIL",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Saha Tamarind",
+      "product_code": "SAHA_TAMARIND",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Bull Energy",
+      "product_code": "BULL_ENERGY",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Dolce Cocktail",
+      "product_code": "DOLCE_COCKTAIL",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Dolce Tamarind",
+      "product_code": "DOLCE_TAMARIND",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Dolce Orange",
+      "product_code": "DOLCE_ORANGE",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Multi-Fruitti",
+      "product_code": "MULTI_FRUITTI",
+      "standard_syrup_ratio": 1.0
+    },
+    {
+      "name": "Dolce Ananas",
+      "product_code": "DOLCE_ANANAS",
+      "standard_syrup_ratio": 1.0
+    }
+  ]
+}

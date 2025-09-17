@@ -1,0 +1,28 @@
+{
+  "package_sizes": [
+    {
+      "size": "500ml",
+      "package_type": "PET",
+      "bottle_per_pack": 12,
+      "volume_ml": 500
+    },
+    {
+      "size": "330ml",
+      "package_type": "CAN",
+      "bottle_per_pack": 24,
+      "volume_ml": 330
+    },
+    {
+      "size": "330ml",
+      "package_type": "PET",
+      "bottle_per_pack": 12,
+      "volume_ml": 330
+    },
+    {
+      "size": "250ml",
+      "package_type": "CAN",
+      "bottle_per_pack": 30,
+      "volume_ml": 250
+    }
+  ]
+}

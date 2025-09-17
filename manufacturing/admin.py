@@ -7,10 +7,10 @@ from django.contrib import messages
 from django.db.models import Sum, Avg
 from .models import (
     ProductionLine, Product, PackageSize, Shift, Machine, DowntimeCode,
-    ManufacturingOrder, ProductionRun, PackagingMaterial, Utility, 
+    ProductionRun, PackagingMaterial, Utility, 
     StopEvent, ProductionReport
 )
-from .services import ProductionCalculationService
+from reports.services import ProductionCalculationService
 
 
 # ===== INLINE ADMIN CLASSES =====
@@ -162,42 +162,6 @@ class DowntimeCodeAdmin(admin.ModelAdmin):
     search_fields = ['code', 'reason']
 
 
-@admin.register(ManufacturingOrder)
-class ManufacturingOrderAdmin(admin.ModelAdmin):
-    list_display = [
-        'order_number', 'product', 'package_size', 'quantity', 
-        'status', 'order_date', 'progress_display'
-    ]
-    list_filter = ['status', 'product', 'order_date']
-    search_fields = ['order_number', 'product__name']
-    date_hierarchy = 'order_date'
-    
-    fieldsets = (
-        ('Order Information', {
-            'fields': ('order_number', 'order_date', 'status')
-        }),
-        ('Product Details', {
-            'fields': ('product', 'package_size', 'quantity')
-        }),
-    )
-    
-    def progress_display(self, obj):
-        # Calculate progress based on completed production runs
-        total_produced = obj.productionrun_set.aggregate(
-            total=Sum('good_products_pack')
-        )['total'] or 0
-        
-        if obj.quantity > 0:
-            progress = (total_produced / obj.quantity) * 100
-            color = 'green' if progress >= 100 else 'orange' if progress >= 80 else 'red'
-            return format_html(
-                '<div style="background-color: #f0f0f0; border-radius: 3px; padding: 2px;">'
-                '<div style="background-color: {}; width: {}%; height: 20px; border-radius: 2px;"></div>'
-                '</div><small>{:.1f}% ({}/{})</small>',
-                color, min(progress, 100), progress, total_produced, obj.quantity
-            )
-        return "No target set"
-    progress_display.short_description = "Progress"
 
 
 @admin.register(ProductionRun)
@@ -217,7 +181,7 @@ class ProductionRunAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Basic Information', {
             'fields': (
-                ('order_number', 'production_batch_number'),
+                ('production_batch_number',),
                 ('date', 'production_line'),
                 ('product', 'package_size'),
             )
@@ -257,11 +221,12 @@ class ProductionRunAdmin(admin.ModelAdmin):
                 'No Data': '#6c757d'
             }
             color = color_map.get(grade, '#6c757d')
+            oee_str = f"{oee_value:.1f}"
             
             return format_html(
                 '<span style="background-color: {}; color: white; padding: 2px 8px; '
-                'border-radius: 3px; font-size: 11px; font-weight: bold;">{:.1f}%</span>',
-                color, oee_value
+                'border-radius: 3px; font-size: 11px; font-weight: bold;">{}%</span>',
+                color, oee_str
             )
         return format_html('<span style="color: #6c757d;">Not calculated</span>')
     oee_display.short_description = "OEE"
@@ -371,12 +336,13 @@ class ProductionReportAdmin(admin.ModelAdmin):
                 'No Data': '#6c757d'
             }
             color = color_map.get(grade, '#6c757d')
+            oee_str = f"{float(obj.oee):.1f}"
             return format_html(
                 '<div style="text-align: center;">'
                 '<div style="background-color: {}; color: white; padding: 4px; '
-                'border-radius: 4px; margin-bottom: 2px; font-weight: bold;">{:.1f}%</div>'
+                'border-radius: 4px; margin-bottom: 2px; font-weight: bold;">{}%</div>'
                 '<small style="color: {};">{}</small></div>',
-                color, float(obj.oee), color, grade
+                color, oee_str, color, grade
             )
         return "Not calculated"
     oee_display.short_description = "OEE"
@@ -396,10 +362,8 @@ class ProductionReportAdmin(admin.ModelAdmin):
     def _percentage_display(self, value, label):
         if value is not None:
             color = '#28a745' if value >= 85 else '#007bff' if value >= 70 else '#ffc107' if value >= 50 else '#dc3545'
-            return format_html(
-                '<span style="color: {}; font-weight: bold;">{:.1f}%</span>',
-                color, float(value)
-            )
+            value_str = f"{float(value):.1f}"
+            return format_html('<span style="color: {}; font-weight: bold;">{}%</span>', color, value_str)
         return "N/A"
 
 
@@ -432,21 +396,21 @@ class ManufacturingAdminSite(admin.AdminSite):
         # Get alerts
         alerts = ProductionCalculationService.get_production_alerts()
         
-        # Recent completed orders
-        recent_completed = ManufacturingOrder.objects.filter(
-            status='Completed'
+        # Recent completed production runs
+        recent_completed = ProductionRun.objects.filter(
+            is_completed=True
         ).order_by('-updated_at')[:5]
         
-        # Pending orders
-        pending_orders = ManufacturingOrder.objects.filter(
-            status__in=['Pending', 'In Progress']
+        # Active production runs
+        active_runs = ProductionRun.objects.filter(
+            is_completed=False
         ).count()
         
         extra_context.update({
             'today_summary': today_summary,
             'alerts': alerts[:10],  # Show top 10 alerts
             'recent_completed': recent_completed,
-            'pending_orders': pending_orders,
+            'active_runs': active_runs,
             'today_date': today,
         })
         
@@ -463,7 +427,6 @@ manufacturing_admin_site.register(PackageSize, PackageSizeAdmin)
 manufacturing_admin_site.register(Shift, ShiftAdmin)
 manufacturing_admin_site.register(Machine, MachineAdmin)
 manufacturing_admin_site.register(DowntimeCode, DowntimeCodeAdmin)
-manufacturing_admin_site.register(ManufacturingOrder, ManufacturingOrderAdmin)
 manufacturing_admin_site.register(ProductionRun, ProductionRunAdmin)
 manufacturing_admin_site.register(StopEvent, StopEventAdmin)
 manufacturing_admin_site.register(ProductionReport, ProductionReportAdmin)

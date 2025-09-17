@@ -1,0 +1,51 @@
+{% comment %}
+Simple test chart to verify Chart.js is working
+Include this temporarily to test if Chart.js loads properly
+{% endcomment %}
+
+<div class="card bg-green-50 border border-green-200 mb-4">
+    <div class="card-body">
+        <h4 class="font-bold text-green-800 mb-2">Chart.js Test</h4>
+        <div class="h-48">
+            <canvas id="testChart"></canvas>
+        </div>
+        
+        <script>
+        function createTestChart() {
+            if (typeof Chart === 'undefined') {
+                console.log('Chart.js not available for test chart');
+                setTimeout(createTestChart, 100);
+                return;
+            }
+            
+            try {
+                const ctx = document.getElementById('testChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Test 1', 'Test 2', 'Test 3'],
+                        datasets: [{
+                            label: 'Test Data',
+                            data: [10, 20, 15],
+                            backgroundColor: ['red', 'green', 'blue']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Test chart created successfully');
+            } catch (error) {
+                console.error('Test chart error:', error);
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', createTestChart);
+        } else {
+            createTestChart();
+        }
+        </script>
+    </div>
+</div>

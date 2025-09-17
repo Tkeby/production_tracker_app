@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Daily Production Summary</h1>
+                <p class="text-lg text-gray-600 mt-2">Complete overview of daily production performance</p>
+            </div>
+            <div class="breadcrumbs text-sm">
+                <ul>
+                    <li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
+                    <li>Daily Summary</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Filter Form -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Filter Options</h3>
+                <form method="get" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Target Date</span>
+                        </label>
+                        {{ form.target_date }}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Production Line</span>
+                        </label>
+                        {{ form.production_line }}
+                    </div>
+                    <div class="form-control md:col-span-2">
+                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if summary %}
+        <!-- Daily Totals -->
+        <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="text-2xl font-bold mb-6">Daily Performance Summary</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary.daily_totals.total_production|floatformat:0|default:"0" }}</div>
+                        <div class="text-sm opacity-90 font-semibold">Total Production (packs)</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary.daily_totals.avg_oee|floatformat:1|default:"0" }}%</div>
+                        <div class="text-sm opacity-90 font-semibold">Average OEE</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary.daily_totals.total_downtime|floatformat:0|default:"0" }}</div>
+                        <div class="text-sm opacity-90 font-semibold">Total Downtime (min)</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary.daily_totals.total_runs|default:"0" }}</div>
+                        <div class="text-sm opacity-90 font-semibold">Production Runs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shift Breakdown -->
+        {% if summary.shifts %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {% for shift_name, shift_data in summary.shifts.items %}
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold">{{ shift_name }}</h3>
+                        <div class="badge badge-outline badge-lg">{{ shift_data.production_runs|length }} runs</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="stat">
+                            <div class="stat-title text-xs">Production</div>
+                            <div class="stat-value text-2xl text-blue-600">{{ shift_data.total_production|floatformat:0 }}</div>
+                            <div class="stat-desc">packs</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-title text-xs">Downtime</div>
+                            <div class="stat-value text-2xl text-orange-600">{{ shift_data.total_downtime|floatformat:0 }}</div>
+                            <div class="stat-desc">minutes</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="text-sm text-gray-600 mb-1">Team Leader: <span class="font-semibold">{{ shift_data.team_leader }}</span></div>
+                    </div>
+
+                    {% if shift_data.production_runs %}
+                    <div class="collapse collapse-arrow bg-base-200">
+                        <input type="checkbox" />
+                        <div class="collapse-title text-sm font-medium">
+                            View Production Runs ({{ shift_data.production_runs|length }})
+                        </div>
+                        <div class="collapse-content">
+                            <div class="space-y-2 pt-2">
+                                {% for run in shift_data.production_runs %}
+                                <div class="flex items-center justify-between p-2 bg-white rounded">
+                                    <div class="flex-1">
+                                        <div class="text-sm font-semibold">{{ run.product.name }}</div>
+                                        <div class="text-xs text-gray-500">{{ run.production_batch_number }}</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-sm font-bold">{{ run.good_products_pack }} packs</div>
+                                        <div class="text-xs text-gray-500">{{ run.total_downtime_minutes }} min downtime</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Production Line Info -->
+        {% if summary.production_line %}
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title">Production Line Details</h3>
+                <div class="flex items-center gap-4">
+                    <div class="avatar placeholder">
+                        <div class="bg-primary text-primary-content rounded-xl w-16">
+                            <span class="text-2xl">🏭</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xl font-bold">{{ summary.production_line.name }}</div>
+                        <div class="text-gray-600">{{ summary.production_line.description|default:"No description" }}</div>
+                        <div class="text-sm text-gray-500 mt-1">
+                            Rated Speed: {{ summary.production_line.rated_speed|floatformat:0 }} bottles/hour
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- No Data State -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center py-16">
+                <div class="text-6xl mb-4">📅</div>
+                <h3 class="text-2xl font-bold mb-2">No Data Available</h3>
+                <p class="text-gray-600 mb-6">Please select a target date and optionally a production line to view daily summary data.</p>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <span class="badge badge-outline">Select target date</span>
+                    <span class="badge badge-outline">Choose production line (optional)</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

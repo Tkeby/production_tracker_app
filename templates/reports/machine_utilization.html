@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Machine Utilization Report</h1>
+                <p class="text-lg text-gray-600 mt-2">Detailed analysis of machine performance and utilization rates</p>
+            </div>
+            <div class="breadcrumbs text-sm">
+                <ul>
+                    <li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
+                    <li>Machine Utilization</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Filter Form -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Analysis Parameters</h3>
+                <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Start Date</span>
+                        </label>
+                        {{ form.start_date }}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">End Date</span>
+                        </label>
+                        {{ form.end_date }}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Production Line <span class="text-red-500">*</span></span>
+                        </label>
+                        {{ form.production_line }}
+                    </div>
+                    <div class="form-control md:col-span-3">
+                        <button type="submit" class="btn btn-primary">Analyze Machine Utilization</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if utilization_data %}
+        <!-- Production Line Info -->
+        <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-xl mb-8">
+            <div class="card-body">
+                <div class="flex items-center gap-6">
+                    <div class="avatar placeholder">
+                        <div class="bg-white text-blue-600 rounded-xl w-16">
+                            <span class="text-2xl">🏭</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-3xl font-bold">{{ production_line.name }}</h2>
+                        <p class="text-lg opacity-90 mt-1">{{ production_line.description|default:"Production Line Analysis" }}</p>
+                        <p class="text-sm opacity-75 mt-2">Analysis Period: {{ date_range }}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold">{{ utilization_data|length }}</div>
+                        <div class="text-sm opacity-90">Active Machines</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Utilization Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card bg-green-50 border border-green-200">
+                <div class="card-body text-center">
+                    <div class="text-3xl font-bold text-green-600">
+                        {{ summary_stats.avg_utilization|default:"0" }}%
+                    </div>
+                    <div class="text-sm text-green-800 font-semibold">Average Utilization</div>
+                </div>
+            </div>
+            <div class="card bg-blue-50 border border-blue-200">
+                <div class="card-body text-center">
+                    <div class="text-3xl font-bold text-blue-600">
+                        {{ summary_stats.total_planned_time|floatformat:0|default:"0" }}
+                    </div>
+                    <div class="text-sm text-blue-800 font-semibold">Total Planned Time (min)</div>
+                </div>
+            </div>
+            <div class="card bg-orange-50 border border-orange-200">
+                <div class="card-body text-center">
+                    <div class="text-3xl font-bold text-orange-600">
+                        {{ summary_stats.total_downtime|floatformat:0|default:"0" }}
+                    </div>
+                    <div class="text-sm text-orange-800 font-semibold">Total Downtime (min)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Utilization Chart -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-4">Machine Utilization Comparison</h3>
+                <div class="h-64">
+                    <canvas id="utilizationChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Machine Details Table -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-4">Machine Performance Details</h3>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th class="text-center">Utilization %</th>
+                                <th class="text-center">Planned Time</th>
+                                <th class="text-center">Downtime</th>
+                                <th class="text-center">Actual Runtime</th>
+                                <th class="text-center">Rated Output</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for machine_name, data in utilization_data.items %}
+                            <tr>
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="avatar placeholder">
+                                            <div class="bg-primary text-primary-content rounded w-10">
+                                                <span class="text-xs">⚙️</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold">{{ machine_name }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center">
+                                        <!-- Utilization progress bar -->
+                                        <div class="radial-progress {% if data.utilization_percentage >= 85 %}text-success{% elif data.utilization_percentage >= 70 %}text-primary{% elif data.utilization_percentage >= 50 %}text-warning{% else %}text-error{% endif %}" 
+                                             style="--value:{{ data.utilization_percentage|floatformat:0 }};" 
+                                             role="progressbar">
+                                            {{ data.utilization_percentage|floatformat:0 }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-semibold">{{ data.total_planned_time|floatformat:0 }}</div>
+                                    <div class="text-xs text-gray-500">minutes</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-semibold {% if data.total_downtime > 120 %}text-red-600{% elif data.total_downtime > 60 %}text-orange-600{% else %}text-green-600{% endif %}">
+                                        {{ data.total_downtime|floatformat:0 }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">minutes</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-semibold text-blue-600">
+                                        {{ data.actual_runtime|floatformat:0 }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">minutes</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-semibold">{{ data.rated_output|floatformat:0 }}</div>
+                                    <div class="text-xs text-gray-500">bottles/hr</div>
+                                </td>
+                                <td>
+                                    {% if data.utilization_percentage >= 85 %}
+                                        <span class="badge badge-success">Excellent</span>
+                                    {% elif data.utilization_percentage >= 70 %}
+                                        <span class="badge badge-primary">Good</span>
+                                    {% elif data.utilization_percentage >= 50 %}
+                                        <span class="badge badge-warning">Fair</span>
+                                    {% else %}
+                                        <span class="badge badge-error">Poor</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Analysis -->
+        <div class="card bg-base-100 shadow-xl mt-8">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-4">Performance Analysis & Recommendations</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-bold text-lg text-green-600 mb-3">Best Performers</h4>
+                        <div class="space-y-2">
+                            {% for machine_name, data in utilization_data.items %}
+                                {% if data.utilization_percentage >= 80 %}
+                                <div class="flex items-center gap-2 p-2 bg-green-50 rounded">
+                                    <span class="text-green-500">⭐</span>
+                                    <div>
+                                        <div class="font-semibold text-sm">{{ machine_name }}</div>
+                                        <div class="text-xs text-gray-600">{{ data.utilization_percentage|floatformat:1 }}% utilization</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% if summary_stats.high_performers == 0 %}
+                            <div class="text-sm text-gray-500 italic">No machines currently achieving >80% utilization</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-lg text-orange-600 mb-3">Needs Attention</h4>
+                        <div class="space-y-2">
+                            {% for machine_name, data in utilization_data.items %}
+                                {% if data.utilization_percentage < 70 %}
+                                <div class="flex items-center gap-2 p-2 bg-orange-50 rounded">
+                                    <span class="text-orange-500">⚠️</span>
+                                    <div>
+                                        <div class="font-semibold text-sm">{{ machine_name }}</div>
+                                        <div class="text-xs text-gray-600">{{ data.utilization_percentage|floatformat:1 }}% utilization</div>
+                                        <div class="text-xs text-orange-600">{{ data.total_downtime|floatformat:0 }} min downtime</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="space-y-3">
+                    <h4 class="font-bold text-lg">Improvement Recommendations</h4>
+                    <ul class="space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 mt-1">💡</span>
+                            <span class="text-sm">Focus preventive maintenance on machines with high downtime</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 mt-1">💡</span>
+                            <span class="text-sm">Consider operator training for machines below 70% utilization</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 mt-1">💡</span>
+                            <span class="text-sm">Implement real-time monitoring for early issue detection</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 mt-1">💡</span>
+                            <span class="text-sm">Review production scheduling to maximize machine utilization</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- No Data State -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center py-16">
+                <div class="text-6xl mb-4">⚙️</div>
+                <h3 class="text-2xl font-bold mb-2">No Machine Data Available</h3>
+                <p class="text-gray-600 mb-6">Please select a date range and production line to analyze machine utilization. Production line selection is required for this report.</p>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <span class="badge badge-outline">Select start date</span>
+                    <span class="badge badge-outline">Select end date</span>
+                    <span class="badge badge-error">Select production line (required)</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+{% if utilization_data %}
+// Machine Utilization Chart
+const ctx = document.getElementById('utilizationChart').getContext('2d');
+
+// Prepare data
+const machineNames = [
+    {% for machine_name, data in utilization_data.items %}
+        '{{ machine_name }}'{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+const utilizationData = [
+    {% for machine_name, data in utilization_data.items %}
+        {{ data.utilization_percentage|floatformat:1 }}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Generate colors based on utilization
+const backgroundColor = utilizationData.map(util => {
+    if (util >= 85) return 'rgba(34, 197, 94, 0.8)';  // green
+    if (util >= 70) return 'rgba(59, 130, 246, 0.8)'; // blue
+    if (util >= 50) return 'rgba(245, 158, 11, 0.8)'; // yellow
+    return 'rgba(239, 68, 68, 0.8)';                  // red
+});
+
+const borderColor = utilizationData.map(util => {
+    if (util >= 85) return 'rgb(34, 197, 94)';  // green
+    if (util >= 70) return 'rgb(59, 130, 246)'; // blue
+    if (util >= 50) return 'rgb(245, 158, 11)'; // yellow
+    return 'rgb(239, 68, 68)';                  // red
+});
+
+const utilizationChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: machineNames,
+        datasets: [{
+            label: 'Utilization %',
+            data: utilizationData,
+            backgroundColor: backgroundColor,
+            borderColor: borderColor,
+            borderWidth: 2,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Utilization: ' + context.parsed.y.toFixed(1) + '%';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Utilization Percentage'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Machine'
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

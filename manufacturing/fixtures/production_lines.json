@@ -1,0 +1,28 @@
+{
+  "production_lines": [
+    {
+      "name": "Line A",
+      "description": "Main production line for PET bottles",
+      "rated_speed": 10000,
+      "is_active": true
+    },
+    {
+      "name": "Line B",
+      "description": "Secondary production line for pet",
+      "rated_speed": 10000,
+      "is_active": true
+    },
+    {
+      "name": "Line C",
+      "description": "Tertiary production line",
+      "rated_speed": 20000,
+      "is_active": true
+    },
+    {
+      "name": "Line CAN",
+      "description": "Dedicated CAN line",
+      "rated_speed": 15000,
+      "is_active": true
+    }
+  ]
+}

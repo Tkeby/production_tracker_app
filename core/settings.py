@@ -54,6 +54,7 @@ LOCAL_APPS = [
     'home',
     'accounts',
     'manufacturing',
+    'reports',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -127,6 +128,7 @@ AUTHENTICATION_BACKENDS = [
 
 # Allauth settings
 ACCOUNT_LOGIN_METHODS = ['email']
+# ACCOUNT_SIGNUP_FIELDS = ['email']  # Fix the conflict warning
 DJANGO_ADMIN_FORCE_ALLAUTH = False
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

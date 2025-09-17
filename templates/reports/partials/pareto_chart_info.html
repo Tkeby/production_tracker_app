@@ -1,0 +1,29 @@
+{% comment %}
+Pareto Chart Information for Downtime Analysis
+
+This partial template provides information about how to interpret the Pareto chart.
+Include this template when you want to show explanatory information about the Pareto analysis.
+
+Usage:
+{% include 'reports/partials/pareto_chart_info.html' %}
+{% endcomment %}
+
+<div class="alert alert-info shadow-lg mb-4">
+    <div>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+            <h3 class="font-bold">Understanding the Pareto Chart</h3>
+            <div class="text-sm mt-2">
+                <p><strong>Purpose:</strong> The Pareto chart helps identify the "vital few" causes that contribute to most of your downtime problems (80/20 rule).</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                    <li><strong>Red bars:</strong> These are your highest impact causes - focus here for maximum improvement</li>
+                    <li><strong>Blue line:</strong> Shows cumulative percentage - helps identify the 80% threshold</li>
+                    <li><strong>80% Rule:</strong> Typically, 20% of causes create 80% of the problems</li>
+                    <li><strong>Action Plan:</strong> Address causes on the left first for the biggest impact on reducing total downtime</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Production Reports Dashboard</h1>
+                <p class="text-lg text-gray-600 mt-2">Real-time production analytics and insights</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{% url 'reports:efficiency_report' %}" class="btn btn-primary">
+                    📊 Full Efficiency Report
+                </a>
+            </div>
+        </div>
+
+        <!-- Production Alerts -->
+        {% if alerts %}
+        <div class="alert alert-warning shadow-lg mb-8">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                    <h3 class="font-bold">Production Alerts ({{ alerts|length }})</h3>
+                    <div class="text-xs">
+                        {% for alert in alerts %}
+                            <div class="badge badge-{{ alert.severity|lower }} badge-sm mr-1">{{ alert.message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="flex-none">
+                <button class="btn btn-sm btn-ghost" onclick="alertModal.showModal()">View Details</button>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Key Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Today's Production -->
+            <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-xl">
+                <div class="card-body">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold opacity-90">Today's Production</h2>
+                            <p class="text-3xl font-bold">
+                                {{ today_summary.daily_totals.total_production|floatformat:0|default:"0" }}
+                            </p>
+                            <p class="text-sm opacity-80">Good Products (packs)</p>
+                        </div>
+                        <div class="text-4xl opacity-80">📦</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average OEE -->
+            <div class="card bg-gradient-to-r from-green-500 to-green-600 text-white shadow-xl">
+                <div class="card-body">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold opacity-90">Average OEE</h2>
+                            <p class="text-3xl font-bold">
+                                {{ today_summary.daily_totals.avg_oee|floatformat:1|default:"0" }}%
+                            </p>
+                            <p class="text-sm opacity-80">Overall Equipment Effectiveness</p>
+                        </div>
+                        <div class="text-4xl opacity-80">⚡</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Downtime -->
+            <div class="card bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-xl">
+                <div class="card-body">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold opacity-90">Today's Downtime</h2>
+                            <p class="text-3xl font-bold">
+                                {{ today_summary.daily_totals.total_downtime|floatformat:0|default:"0" }}
+                            </p>
+                            <p class="text-sm opacity-80">Minutes</p>
+                        </div>
+                        <div class="text-4xl opacity-80">⏱️</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Production Runs -->
+            <div class="card bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-xl">
+                <div class="card-body">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold opacity-90">Production Runs</h2>
+                            <p class="text-3xl font-bold">
+                                {{ today_summary.daily_totals.total_runs|default:"0" }}
+                            </p>
+                            <p class="text-sm opacity-80">Today</p>
+                        </div>
+                        <div class="text-4xl opacity-80">🏭</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts and Analysis Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- OEE Trend Chart -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">OEE Trend (Last 7 Days)</h3>
+                    {% if oee_trend %}
+                    <div class="h-64">
+                        <canvas id="oeeChart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-gray-500 py-16">
+                        No OEE data available for the last 7 days
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Top Downtime Reasons -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">Top Downtime Reasons</h3>
+                    {% if top_downtime %}
+                    <div class="space-y-3">
+                        {% for reason in top_downtime %}
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex-1">
+                                <div class="font-semibold">{{ reason.code }} - {{ reason.code__reason }}</div>
+                                <!-- <div class="text-sm text-gray-600">{{ reason.code__reason|default:"No description" }}</div> -->
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-lg">{{ reason.total_duration }} min</div>
+                                <div class="text-xs text-gray-500">{{ reason.occurrence_count }} times</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-gray-500 py-16">
+                        No downtime data available
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Reports Access -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-6">Quick Reports</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <a href="{% url 'reports:shift_summary' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
+                        <div class="text-2xl mb-2">🔄</div>
+                        <div class="text-sm font-semibold">Shift Summary</div>
+                    </a>
+                    <a href="{% url 'reports:daily_summary' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
+                        <div class="text-2xl mb-2">📅</div>
+                        <div class="text-sm font-semibold">Daily Summary</div>
+                    </a>
+                    <a href="{% url 'reports:weekly_summary' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
+                        <div class="text-2xl mb-2">📊</div>
+                        <div class="text-sm font-semibold">Weekly Summary</div>
+                    </a>
+                    <a href="{% url 'reports:oee_trend' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
+                        <div class="text-2xl mb-2">📈</div>
+                        <div class="text-sm font-semibold">OEE Analysis</div>
+                    </a>
+                    <a href="{% url 'reports:downtime_analysis' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
+                        <div class="text-2xl mb-2">⏰</div>
+                        <div class="text-sm font-semibold">Downtime Analysis</div>
+                    </a>
+                    <a href="{% url 'reports:machine_utilization' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
+                        <div class="text-2xl mb-2">⚙️</div>
+                        <div class="text-sm font-semibold">Machine Utilization</div>
+                    </a>
+                    <a href="{% url 'reports:efficiency_report' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
+                        <div class="text-2xl mb-2">📋</div>
+                        <div class="text-sm font-semibold">Full Report</div>
+                    </a>
+                    <div class="btn btn-outline btn-lg h-auto flex-col py-4 btn-disabled">
+                        <div class="text-2xl mb-2">📤</div>
+                        <div class="text-sm font-semibold">Export Data</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Details Modal -->
+{% if alerts %}
+<dialog id="alertModal" class="modal">
+    <div class="modal-box w-11/12 max-w-5xl">
+        <h3 class="font-bold text-lg">Production Alerts Details</h3>
+        <div class="py-4">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Severity</th>
+                            <th>Production Run</th>
+                            <th>Message</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in alerts %}
+                        <tr>
+                            <td>
+                                <span class="badge badge-outline">{{ alert.type }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ alert.severity|lower }}">{{ alert.severity }}</span>
+                            </td>
+                            <td>
+                                <a href="#" class="link">{{ alert.production_run.production_batch_number }}</a>
+                            </td>
+                            <td>{{ alert.message }}</td>
+                            <td class="font-mono">{{ alert.value|floatformat:1 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-action">
+            <button class="btn" onclick="alertModal.close()">Close</button>
+        </div>
+    </div>
+</dialog>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// OEE Chart
+{% if oee_trend %}
+const ctx = document.getElementById('oeeChart').getContext('2d');
+const oeeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [
+            {% for item in oee_trend %}
+                '{{ item.production_run__date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'OEE %',
+            data: [
+                {% for item in oee_trend %}
+                    {{ item.avg_oee|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.1,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

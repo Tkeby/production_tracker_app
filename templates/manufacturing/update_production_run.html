@@ -30,429 +30,296 @@
                     </div>
                 </div>
             
-                <form method="post" class="space-y-6">
+                <form method="post" class="space-y-6" x-data="{ activeTab: 'basic' }">
                     {% csrf_token %}
+                    <input type="hidden" data-production-run-id="{{ object.pk }}" name="production_run_id" value="{{ object.pk }}">
                     
                     <div class="tabs tabs-boxed mb-6">
-                        <a class="tab tab-active">Basic Info</a>
-                        <a class="tab">Production Data</a>
-                        <a class="tab">Timing</a>
+                        <a class="tab" :class="{ 'tab-active': activeTab === 'basic' }" @click="activeTab = 'basic'">Basic Info</a>
+                        <a class="tab" :class="{ 'tab-active': activeTab === 'production' }" @click="activeTab = 'production'">Production Data</a>
+                        <a class="tab" :class="{ 'tab-active': activeTab === 'materials' }" @click="activeTab = 'materials'">Materials & Utility</a>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Basic Information -->
-                        <div class="form-control">
-                            <label class="label" for="{{ form.order_number.id_for_label }}">
-                                <span class="label-text">Manufacturing Order</span>
-                            </label>
-                            {{ form.order_number }}
-                            {% if form.order_number.errors %}
+                    <!-- Basic Info Tab -->
+                    <div x-show="activeTab === 'basic'" x-transition>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Basic Information -->
+                            <div class="form-control">
                                 <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.order_number.errors.0 }}</span>
+                                    <span class="label-text">Production Batch Number</span>
+                                    <span class="label-text-alt text-info">Auto-generated</span>
                                 </label>
-                            {% endif %}
-                            <div id="product-info"></div>
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label" for="{{ form.production_batch_number.id_for_label }}">
-                                <span class="label-text">Production Batch Number</span>
-                            </label>
-                            {{ form.production_batch_number }}
-                            {% if form.production_batch_number.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.production_batch_number.errors.0 }}</span>
-                                </label>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label" for="{{ form.date.id_for_label }}">
-                                <span class="label-text">Production Date</span>
-                            </label>
-                            {{ form.date }}
-                            {% if form.date.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.date.errors.0 }}</span>
-                                </label>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label" for="{{ form.production_line.id_for_label }}">
-                                <span class="label-text">Production Line</span>
-                            </label>
-                            {{ form.production_line }}
-                            {% if form.production_line.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.production_line.errors.0 }}</span>
-                                </label>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Product Information -->
-                        <div class="form-control">
-                            <label class="label" for="{{ form.product.id_for_label }}">
-                                <span class="label-text">Product</span>
-                            </label>
-                            <div id="product-options">
-                                {{ form.product }}
+                                <div id="batch-number-container">
+                                    {% include 'manufacturing/htmx/batch_number.html' with batch_number=object.production_batch_number %}
+                                </div>
+                                {% if form.production_batch_number.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.production_batch_number.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
                             </div>
-                            {% if form.product.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.product.errors.0 }}</span>
+                            
+                            <div class="form-control">
+                                <label class="label" for="{{ form.date.id_for_label }}">
+                                    <span class="label-text">Production Date</span>
                                 </label>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label" for="{{ form.package_size.id_for_label }}">
-                                <span class="label-text">Package Size</span>
-                            </label>
-                            <div id="package-options">
-                                {{ form.package_size }}
+                                {{ form.date }}
+                                {% if form.date.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.date.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
                             </div>
-                            {% if form.package_size.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.package_size.errors.0 }}</span>
+                            
+                            <div class="form-control">
+                                <label class="label" for="{{ form.production_line.id_for_label }}">
+                                    <span class="label-text">Production Line</span>
                                 </label>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Shift & Timing -->
-                        <div class="form-control">
-                            <label class="label" for="{{ form.shift.id_for_label }}">
-                                <span class="label-text">Shift</span>
-                            </label>
-                            {{ form.shift }}
-                            {% if form.shift.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.shift.errors.0 }}</span>
-                                </label>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <!-- Production Timing Section -->
-                    <div class="divider divider-primary">Production Timing</div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-control">
-                            <label class="label" for="{{ form.production_start.id_for_label }}">
-                                <span class="label-text">Production Start</span>
-                            </label>
-                            {{ form.production_start }}
-                            {% if form.production_start.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.production_start.errors.0 }}</span>
-                                </label>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label" for="{{ form.production_end.id_for_label }}">
-                                <span class="label-text">Production End</span>
-                            </label>
-                            {{ form.production_end }}
-                            {% if form.production_end.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.production_end.errors.0 }}</span>
-                                </label>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <!-- Production Data Section -->
-                    <div class="divider divider-secondary">Production Data</div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-control">
-                            <label class="label" for="{{ form.filler_output.id_for_label }}">
-                                <span class="label-text">Filler Output</span>
-                            </label>
-                            {{ form.filler_output }}
-                            {% if form.filler_output.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.filler_output.errors.0 }}</span>
-                                </label>
-                            {% else %}
-                                <label class="label">
-                                    <span class="label-text-alt">Bottles per hour</span>
-                                </label>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label" for="{{ form.final_syrup_volume.id_for_label }}">
-                                <span class="label-text">Final Syrup Volume</span>
-                            </label>
-                            <div class="join">
-                                {{ form.final_syrup_volume }}
-                                <span class="btn btn-outline join-item">L</span>
+                                {{ form.production_line }}
+                                {% if form.production_line.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.production_line.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
                             </div>
-                            {% if form.final_syrup_volume.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.final_syrup_volume.errors.0 }}</span>
+                            
+                            <!-- Product Information -->
+                            <div class="form-control">
+                                <label class="label" for="{{ form.product.id_for_label }}">
+                                    <span class="label-text">Product</span>
                                 </label>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label" for="{{ form.mixing_ratio.id_for_label }}">
-                                <span class="label-text">Mixing Ratio</span>
-                            </label>
-                            {{ form.mixing_ratio }}
-                            {% if form.mixing_ratio.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.mixing_ratio.errors.0 }}</span>
-                                </label>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="form-control">
-                            <label class="label" for="{{ form.good_products_pack.id_for_label }}">
-                                <span class="label-text">Good Products</span>
-                            </label>
-                            <div class="join">
-                                {{ form.good_products_pack }}
-                                <span class="btn btn-outline join-item">Packs</span>
+                                <div id="product-options">
+                                    {{ form.product }}
+                                </div>
+                                {% if form.product.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.product.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
                             </div>
-                            {% if form.good_products_pack.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.good_products_pack.errors.0 }}</span>
+                            
+                            <div class="form-control">
+                                <label class="label" for="{{ form.package_size.id_for_label }}">
+                                    <span class="label-text">Package Size</span>
                                 </label>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <!-- Packaging Materials Section -->
-                    <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg shadow-sm mt-4">
-                        <input type="checkbox" name="packaging-accordion" checked>
-                        <div class="collapse-title text-xl font-medium">
-                            <div class="flex items-center gap-3">
-                                <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                </svg>
-                                <span>Packaging Materials</span>
-                                <div class="badge badge-info badge-sm">Required</div>
+                                <div id="package-options">
+                                    {{ form.package_size }}
+                                </div>
+                                {% if form.package_size.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.package_size.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Shift -->
+                            <div class="form-control">
+                                <label class="label" for="{{ form.shift.id_for_label }}">
+                                    <span class="label-text">Shift</span>
+                                </label>
+                                {{ form.shift }}
+                                {% if form.shift.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.shift.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="collapse-content">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_preform_used.id_for_label }}">
-                                        <span class="label-text">Preforms Used</span>
-                                        <span class="label-text-alt text-error">*</span>
+                        
+                        <!-- Production Timing Section -->
+                        <div class="divider divider-primary">Production Timing</div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-control">
+                                <label class="label" for="{{ form.production_start.id_for_label }}">
+                                    <span class="label-text">Production Start</span>
+                                </label>
+                                {{ form.production_start }}
+                                {% if form.production_start.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.production_start.errors.0 }}</span>
                                     </label>
-                                    {{ packaging_form.qty_preform_used }}
-                                    {% if packaging_form.qty_preform_used.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_preform_used.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_cap_used.id_for_label }}">
-                                        <span class="label-text">Caps Used</span>
-                                        <span class="label-text-alt text-error">*</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label" for="{{ form.production_end.id_for_label }}">
+                                    <span class="label-text">Production End</span>
+                                </label>
+                                {{ form.production_end }}
+                                {% if form.production_end.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.production_end.errors.0 }}</span>
                                     </label>
-                                    {{ packaging_form.qty_cap_used }}
-                                    {% if packaging_form.qty_cap_used.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_cap_used.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_product_reject.id_for_label }}">
-                                        <span class="label-text">Product Rejects</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_product_reject }}
-                                    {% if packaging_form.qty_product_reject.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_product_reject.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_preform_reject.id_for_label }}">
-                                        <span class="label-text">Preform Rejects</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_preform_reject }}
-                                    {% if packaging_form.qty_preform_reject.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_preform_reject.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_bottle_reject.id_for_label }}">
-                                        <span class="label-text">Bottle Rejects</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_bottle_reject }}
-                                    {% if packaging_form.qty_bottle_reject.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_bottle_reject.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_cap_reject.id_for_label }}">
-                                        <span class="label-text">Cap Rejects</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_cap_reject }}
-                                    {% if packaging_form.qty_cap_reject.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_cap_reject.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.label_reject_g.id_for_label }}">
-                                        <span class="label-text">Label Reject</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ packaging_form.label_reject_g }}
-                                        <span class="btn btn-outline join-item">g</span>
-                                    </div>
-                                    {% if packaging_form.label_reject_g.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.label_reject_g.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.shrink_wrap_kg.id_for_label }}">
-                                        <span class="label-text">Shrink Wrap</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ packaging_form.shrink_wrap_kg }}
-                                        <span class="btn btn-outline join-item">kg</span>
-                                    </div>
-                                    {% if packaging_form.shrink_wrap_kg.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.shrink_wrap_kg.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.stretch_wrap_g.id_for_label }}">
-                                        <span class="label-text">Stretch Wrap</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ packaging_form.stretch_wrap_g }}
-                                        <span class="btn btn-outline join-item">g</span>
-                                    </div>
-                                    {% if packaging_form.stretch_wrap_g.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.stretch_wrap_g.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Utility Consumption Section -->
-                    <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg shadow-sm mt-4">
-                        <input type="checkbox" name="utility-accordion" checked>
-                        <div class="collapse-title text-xl font-medium">
-                            <div class="flex items-center gap-3">
-                                <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                                <span>Utility Consumption</span>
-                                <div class="badge badge-warning badge-sm">Required</div>
+                    <!-- Production Data Tab -->
+                    <div x-show="activeTab === 'production'" x-transition>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-control">
+                                <label class="label" for="{{ form.filler_output.id_for_label }}">
+                                    <span class="label-text">Filler Output</span>
+                                </label>
+                                {{ form.filler_output }}
+                                {% if form.filler_output.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.filler_output.errors.0 }}</span>
+                                    </label>
+                                {% else %}
+                                    <label class="label">
+                                        <span class="label-text-alt">Bottles per hour</span>
+                                    </label>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label" for="{{ form.final_syrup_volume.id_for_label }}">
+                                    <span class="label-text">Final Syrup Volume</span>
+                                </label>
+                                <div class="join">
+                                    {{ form.final_syrup_volume }}
+                                    <span class="btn btn-outline join-item">L</span>
+                                </div>
+                                {% if form.final_syrup_volume.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.final_syrup_volume.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label" for="{{ form.mixing_ratio.id_for_label }}">
+                                    <span class="label-text">Mixing Ratio</span>
+                                </label>
+                                {{ form.mixing_ratio }}
+                                {% if form.mixing_ratio.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.mixing_ratio.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-control">
+                                <label class="label" for="{{ form.good_products_pack.id_for_label }}">
+                                    <span class="label-text">Good Products</span>
+                                </label>
+                                <div class="join">
+                                    {{ form.good_products_pack }}
+                                    <span class="btn btn-outline join-item">Packs</span>
+                                </div>
+                                {% if form.good_products_pack.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.good_products_pack.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="collapse-content">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                                <div class="form-control">
-                                    <label class="label" for="{{ utility_form.kg_co2.id_for_label }}">
-                                        <span class="label-text">CO2 Consumption</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ utility_form.kg_co2 }}
-                                        <span class="btn btn-outline join-item">kg</span>
-                                    </div>
-                                    {% if utility_form.kg_co2.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ utility_form.kg_co2.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
+                    </div>
+                    
+                    <!-- Materials & Utility Tab -->
+                    <div x-show="activeTab === 'materials'" x-transition>
+                        <!-- Packaging Materials Section -->
+                        <div class="card bg-base-100 border border-base-300 rounded-lg shadow-sm mb-6">
+                            <div class="card-body">
+                                <h3 class="card-title text-xl mb-4">
+                                    <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                    Packaging Materials
+                                    <div class="badge badge-info badge-sm">Required</div>
+                                </h3>
+                                <div id="packaging-fields-container">
+                                    {% include 'manufacturing/htmx/packaging_fields.html' with packaging_form=packaging_form production_line=object.production_line %}
                                 </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ utility_form.boiler_fuel_l.id_for_label }}">
-                                        <span class="label-text">Boiler Fuel</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ utility_form.boiler_fuel_l }}
-                                        <span class="btn btn-outline join-item">L</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Utility Consumption Section -->
+                        <div class="card bg-base-100 border border-base-300 rounded-lg shadow-sm">
+                            <div class="card-body">
+                                <h3 class="card-title text-xl mb-4">
+                                    <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    Utility Consumption
+                                    <div class="badge badge-warning badge-sm">Required</div>
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="form-control">
+                                        <label class="label" for="{{ utility_form.kg_co2.id_for_label }}">
+                                            <span class="label-text">CO2 Consumption</span>
+                                            <span class="label-text-alt text-error">*</span>
+                                        </label>
+                                        <div class="join">
+                                            {{ utility_form.kg_co2 }}
+                                            <span class="btn btn-outline join-item">kg</span>
+                                        </div>
+                                        {% if utility_form.kg_co2.errors %}
+                                            <label class="label">
+                                                <span class="label-text-alt text-error">{{ utility_form.kg_co2.errors.0 }}</span>
+                                            </label>
+                                        {% endif %}
                                     </div>
-                                    {% if utility_form.boiler_fuel_l.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ utility_form.boiler_fuel_l.errors.0 }}</span>
-                                        </label>
-                                    {% else %}
-                                        <label class="label">
-                                            <span class="label-text-alt">Optional - leave blank if not used</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
 
-                                <div class="form-control">
-                                    <label class="label" for="{{ utility_form.generator_fuel_l.id_for_label }}">
-                                        <span class="label-text">Generator Fuel</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ utility_form.generator_fuel_l }}
-                                        <span class="btn btn-outline join-item">L</span>
+                                    <div class="form-control">
+                                        <label class="label" for="{{ utility_form.boiler_fuel_l.id_for_label }}">
+                                            <span class="label-text">Boiler Fuel</span>
+                                        </label>
+                                        <div class="join">
+                                            {{ utility_form.boiler_fuel_l }}
+                                            <span class="btn btn-outline join-item">L</span>
+                                        </div>
+                                        {% if utility_form.boiler_fuel_l.errors %}
+                                            <label class="label">
+                                                <span class="label-text-alt text-error">{{ utility_form.boiler_fuel_l.errors.0 }}</span>
+                                            </label>
+                                        {% else %}
+                                            <label class="label">
+                                                <span class="label-text-alt">Optional - leave blank if not used</span>
+                                            </label>
+                                        {% endif %}
                                     </div>
-                                    {% if utility_form.generator_fuel_l.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ utility_form.generator_fuel_l.errors.0 }}</span>
-                                        </label>
-                                    {% else %}
-                                        <label class="label">
-                                            <span class="label-text-alt">Optional - leave blank if not used</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
 
-                                <div class="form-control">
-                                    <label class="label" for="{{ utility_form.edg_power_consumption.id_for_label }}">
-                                        <span class="label-text">EDG Power Consumption</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ utility_form.edg_power_consumption }}
-                                        <span class="btn btn-outline join-item">kWh</span>
+                                    <div class="form-control">
+                                        <label class="label" for="{{ utility_form.generator_fuel_l.id_for_label }}">
+                                            <span class="label-text">Generator Fuel</span>
+                                        </label>
+                                        <div class="join">
+                                            {{ utility_form.generator_fuel_l }}
+                                            <span class="btn btn-outline join-item">L</span>
+                                        </div>
+                                        {% if utility_form.generator_fuel_l.errors %}
+                                            <label class="label">
+                                                <span class="label-text-alt text-error">{{ utility_form.generator_fuel_l.errors.0 }}</span>
+                                            </label>
+                                        {% else %}
+                                            <label class="label">
+                                                <span class="label-text-alt">Optional - leave blank if not used</span>
+                                            </label>
+                                        {% endif %}
                                     </div>
-                                    {% if utility_form.edg_power_consumption.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ utility_form.edg_power_consumption.errors.0 }}</span>
+
+                                    <div class="form-control">
+                                        <label class="label" for="{{ utility_form.edg_power_consumption.id_for_label }}">
+                                            <span class="label-text">EDG Power Consumption</span>
                                         </label>
-                                    {% else %}
-                                        <label class="label">
-                                            <span class="label-text-alt">Optional - Emergency diesel generator power</span>
-                                        </label>
-                                    {% endif %}
+                                        <div class="join">
+                                            {{ utility_form.edg_power_consumption }}
+                                            <span class="btn btn-outline join-item">kWh</span>
+                                        </div>
+                                        {% if utility_form.edg_power_consumption.errors %}
+                                            <label class="label">
+                                                <span class="label-text-alt text-error">{{ utility_form.edg_power_consumption.errors.0 }}</span>
+                                            </label>
+                                        {% else %}
+                                            <label class="label">
+                                                <span class="label-text-alt">Optional - Emergency diesel generator power</span>
+                                            </label>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>

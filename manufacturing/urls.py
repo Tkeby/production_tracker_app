@@ -12,10 +12,12 @@ urlpatterns = [
     path('production-run/<int:pk>/', views.ProductionRunDetailView.as_view(), name='production_run_detail'),
     path('production-run/<int:pk>/edit/', views.UpdateProductionRunView.as_view(), name='update_production_run'),
     path('production-run/<int:pk>/finalize/', views.FinalizeProductionRunView.as_view(), name='finalize_production_run'),
+    path('production-run/<int:production_run_pk>/add-stop-event/', views.CreateStopEventView.as_view(), name='create_stop_event'),
     path('reports/', views.ReportsListView.as_view(), name='reports_list'),
     
     # HTMX endpoints
-    path('htmx/product-info/', views.htmx_product_info, name='htmx_product_info'),
     path('htmx/product-packages/', views.htmx_product_packages, name='htmx_product_packages'),
     path('htmx/machine-codes/', views.htmx_machine_codes, name='htmx_machine_codes'),
+    path('htmx/packaging-fields/', views.htmx_packaging_fields, name='htmx_packaging_fields'),
+    path('htmx/generate-batch-number/', views.htmx_generate_batch_number, name='htmx_generate_batch_number'),
 ]

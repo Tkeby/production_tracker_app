@@ -22,11 +22,40 @@
                 </h1>
                 <p class="text-base-content/70 mb-6">Enter the production details to begin tracking manufacturing metrics</p>
             
-                <form method="post" class="space-y-8">
+                <form method="post" class="space-y-8" x-data="{ 
+                    activeTab: 'basic',
+                    tabs: ['basic', 'production', 'materials'],
+                    nextTab() {
+                        const currentIndex = this.tabs.indexOf(this.activeTab);
+                        if (currentIndex < this.tabs.length - 1) {
+                            this.activeTab = this.tabs[currentIndex + 1];
+                        }
+                    },
+                    prevTab() {
+                        const currentIndex = this.tabs.indexOf(this.activeTab);
+                        if (currentIndex > 0) {
+                            this.activeTab = this.tabs[currentIndex - 1];
+                        }
+                    },
+                    isFirstTab() {
+                        return this.activeTab === this.tabs[0];
+                    },
+                    isLastTab() {
+                        return this.activeTab === this.tabs[this.tabs.length - 1];
+                    }
+                }">
                     {% csrf_token %}
                     
+                    <div class="tabs tabs-boxed mb-6">
+                        <a class="tab" :class="{ 'tab-active': activeTab === 'basic' }" @click="activeTab = 'basic'">Basic Info</a>
+                        <a class="tab" :class="{ 'tab-active': activeTab === 'production' }" @click="activeTab = 'production'">Production Data</a>
+                        <a class="tab" :class="{ 'tab-active': activeTab === 'materials' }" @click="activeTab = 'materials'">Materials & Utility</a>
+                    </div>
+                    
+                    <!-- Basic Info Tab -->
+                    <div x-show="activeTab === 'basic'" x-transition>
                     <!-- Order Information Section -->
-                    <div class="collapse collapse-arrow bg-base-200 open">
+                    <div class="collapse collapse-arrow bg-base-200 mb-4 open">
                         <input type="checkbox" checked /> 
                         <div class="collapse-title text-xl font-medium">
                             <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,26 +66,15 @@
                         <div class="collapse-content">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                 
-                                <div class="form-control">
-                                    <label class="label" for="{{ form.order_number.id_for_label }}">
-                                        <span class="label-text">Manufacturing Order</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ form.order_number }}
-                                    {% if form.order_number.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ form.order_number.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                    <div id="product-info"></div>
-                                </div>
                                 
                                 <div class="form-control">
-                                    <label class="label" for="{{ form.production_batch_number.id_for_label }}">
+                                    <label class="label">
                                         <span class="label-text">Production Batch Number</span>
-                                        <span class="label-text-alt text-error">*</span>
+                                        <span class="label-text-alt text-info">Auto-generated</span>
                                     </label>
-                                    {{ form.production_batch_number }}
+                                    <div id="batch-number-container">
+                                        {% include 'manufacturing/htmx/batch_number.html' %}
+                                    </div>
                                     {% if form.production_batch_number.errors %}
                                         <label class="label">
                                             <span class="label-text-alt text-error">{{ form.production_batch_number.errors.0 }}</span>
@@ -94,7 +112,7 @@
                     </div>
                     
                     <!-- Product Information Section -->
-                    <div class="collapse collapse-arrow bg-base-200 open">
+                    <div class="collapse collapse-arrow bg-base-200 mb-4 open">
                         <input type="checkbox" checked /> 
                         <div class="collapse-title text-xl font-medium">
                             <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,6 +208,39 @@
                         </div>
                     </div>
                     
+                    <!-- Tab Navigation -->
+                    <div class="flex justify-between pt-6">
+                        <button 
+                            type="button" 
+                            class="btn btn-outline btn-lg gap-2" 
+                            @click="prevTab()"
+                            x-show="!isFirstTab()"
+                            x-transition
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Back
+                        </button>
+                        <div x-show="isFirstTab()"></div>
+                        
+                        <button 
+                            type="button" 
+                            class="btn btn-primary btn-lg gap-2" 
+                            @click="nextTab()"
+                            x-show="!isLastTab()"
+                            x-transition
+                        >
+                            Next
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    </div>
+                    
+                    <!-- Production Data Tab -->
+                    <div x-show="activeTab === 'production'" x-transition>
                     <!-- Production Data Section -->
                     <div class="collapse collapse-arrow bg-base-200 open">
                         <input type="checkbox" checked /> 
@@ -270,12 +321,45 @@
                         </div>
                     </div>
                     
+                    <!-- Tab Navigation -->
+                    <div class="flex justify-between pt-6">
+                        <button 
+                            type="button" 
+                            class="btn btn-outline btn-lg gap-2" 
+                            @click="prevTab()"
+                            x-show="!isFirstTab()"
+                            x-transition
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Back
+                        </button>
+                        <div x-show="isFirstTab()"></div>
+                        
+                        <button 
+                            type="button" 
+                            class="btn btn-primary btn-lg gap-2" 
+                            @click="nextTab()"
+                            x-show="!isLastTab()"
+                            x-transition
+                        >
+                            Next
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    </div>
+                    
+                    <!-- Materials & Utility Tab -->
+                    <div x-show="activeTab === 'materials'" x-transition>
                     <!-- Packaging Materials Section -->
-                    <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg shadow-sm">
+                    <div class="collapse collapse-arrow bg-base-200 border border-base-300 rounded-lg shadow-sm">
                         <input type="checkbox" name="packaging-accordion" checked>
                         <div class="collapse-title text-xl font-medium">
                             <div class="flex items-center gap-3">
-                                <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                 </svg>
                                 <span>Packaging Materials</span>
@@ -283,138 +367,14 @@
                             </div>
                         </div>
                         <div class="collapse-content">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_preform_used.id_for_label }}">
-                                        <span class="label-text">Preforms Used</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_preform_used }}
-                                    {% if packaging_form.qty_preform_used.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_preform_used.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_cap_used.id_for_label }}">
-                                        <span class="label-text">Caps Used</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_cap_used }}
-                                    {% if packaging_form.qty_cap_used.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_cap_used.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_product_reject.id_for_label }}">
-                                        <span class="label-text">Product Rejects</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_product_reject }}
-                                    {% if packaging_form.qty_product_reject.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_product_reject.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_preform_reject.id_for_label }}">
-                                        <span class="label-text">Preform Rejects</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_preform_reject }}
-                                    {% if packaging_form.qty_preform_reject.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_preform_reject.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_bottle_reject.id_for_label }}">
-                                        <span class="label-text">Bottle Rejects</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_bottle_reject }}
-                                    {% if packaging_form.qty_bottle_reject.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_bottle_reject.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.qty_cap_reject.id_for_label }}">
-                                        <span class="label-text">Cap Rejects</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    {{ packaging_form.qty_cap_reject }}
-                                    {% if packaging_form.qty_cap_reject.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.qty_cap_reject.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.label_reject_g.id_for_label }}">
-                                        <span class="label-text">Label Reject</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ packaging_form.label_reject_g }}
-                                        <span class="btn btn-outline join-item">g</span>
-                                    </div>
-                                    {% if packaging_form.label_reject_g.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.label_reject_g.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.shrink_wrap_kg.id_for_label }}">
-                                        <span class="label-text">Shrink Wrap</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ packaging_form.shrink_wrap_kg }}
-                                        <span class="btn btn-outline join-item">kg</span>
-                                    </div>
-                                    {% if packaging_form.shrink_wrap_kg.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.shrink_wrap_kg.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-control">
-                                    <label class="label" for="{{ packaging_form.stretch_wrap_g.id_for_label }}">
-                                        <span class="label-text">Stretch Wrap</span>
-                                        <span class="label-text-alt text-error">*</span>
-                                    </label>
-                                    <div class="join">
-                                        {{ packaging_form.stretch_wrap_g }}
-                                        <span class="btn btn-outline join-item">g</span>
-                                    </div>
-                                    {% if packaging_form.stretch_wrap_g.errors %}
-                                        <label class="label">
-                                            <span class="label-text-alt text-error">{{ packaging_form.stretch_wrap_g.errors.0 }}</span>
-                                        </label>
-                                    {% endif %}
-                                </div>
+                            <div id="packaging-fields-container">
+                                {% include 'manufacturing/htmx/packaging_fields.html' with packaging_form=packaging_form production_line=None %}
                             </div>
                         </div>
                     </div>
                     
                     <!-- Utility Consumption Section -->
-                    <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-lg shadow-sm mt-4">
+                    <div class="collapse collapse-arrow bg-base-200 border border-base-300 rounded-lg shadow-sm mt-4">
                         <input type="checkbox" name="utility-accordion" checked>
                         <div class="collapse-title text-xl font-medium">
                             <div class="flex items-center gap-3">
@@ -502,6 +462,37 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Tab Navigation -->
+                    <div class="flex justify-between pt-6">
+                        <button 
+                            type="button" 
+                            class="btn btn-outline btn-lg gap-2" 
+                            @click="prevTab()"
+                            x-show="!isFirstTab()"
+                            x-transition
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Back
+                        </button>
+                        <div x-show="isFirstTab()"></div>
+                        
+                        <button 
+                            type="button" 
+                            class="btn btn-primary btn-lg gap-2" 
+                            @click="nextTab()"
+                            x-show="!isLastTab()"
+                            x-transition
+                        >
+                            Next
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    </div>
                 
                     <!-- Form Actions -->
                     <div class="card-actions justify-between pt-8 border-t border-base-300">
@@ -534,7 +525,7 @@
                 <div class="space-y-3 text-sm">
                     <div class="flex items-start gap-2">
                         <div class="badge badge-primary badge-sm mt-0.5">1</div>
-                        <p>Select the manufacturing order from the list. If not available, create one first.</p>
+                        <p>Production batch number should be unique for traceability.</p>
                     </div>
                     <div class="flex items-start gap-2">
                         <div class="badge badge-primary badge-sm mt-0.5">2</div>

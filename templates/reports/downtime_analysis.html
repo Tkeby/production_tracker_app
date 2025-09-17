@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900">Downtime Analysis</h1>
+                <p class="text-lg text-gray-600 mt-2">Comprehensive analysis of production interruptions and their causes</p>
+            </div>
+            <div class="breadcrumbs text-sm">
+                <ul>
+                    <li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
+                    <li>Downtime Analysis</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Filter Form -->
+        <div class="card bg-base-100 shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Analysis Parameters</h3>
+                <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Start Date</span>
+                        </label>
+                        {{ form.start_date }}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">End Date</span>
+                        </label>
+                        {{ form.end_date }}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Production Line</span>
+                        </label>
+                        {{ form.production_line }}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Top N Reasons</span>
+                        </label>
+                        {{ form.limit }}
+                    </div>
+                    <div class="form-control md:col-span-4">
+                        <button type="submit" class="btn btn-primary">Analyze Downtime</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if downtime_data %}
+        <!-- Summary Card -->
+        <div class="card bg-gradient-to-r from-red-500 to-red-600 text-white shadow-xl mb-8">
+            <div class="card-body">
+                <h3 class="text-2xl font-bold mb-4">Downtime Summary</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">
+                            {{ summary_stats.total_duration|floatformat:0|default:"0" }}
+                        </div>
+                        <div class="text-sm opacity-90 font-semibold">Total Downtime Minutes</div>
+                        <div class="text-xs opacity-75">{{ date_range }}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">{{ summary_stats.unique_reasons|default:"0" }}</div>
+                        <div class="text-sm opacity-90 font-semibold">Unique Downtime Reasons</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold">
+                            {{ summary_stats.total_occurrences|default:"0" }}
+                        </div>
+                        <div class="text-sm opacity-90 font-semibold">Total Occurrences</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pareto Analysis -->
+        <div class="mb-8">
+            <!-- {% include 'reports/partials/pareto_chart_info.html' %} -->
+            {% include 'reports/partials/pareto_chart.html' with pareto_data=pareto_data chart_title="Downtime Pareto Analysis" chart_id="downtimeParetoChart" %}
+        </div>
+
+        <!-- Top Downtime Reasons -->
+       
+
+        <!-- Detailed Downtime Table -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-4">Detailed Downtime Analysis</h3>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th class="w-20">#</th>
+                                <th>Machine</th>
+                                <th>Code</th>
+                                <th>Code Reason</th>
+                                <th class="text-center">Total Duration</th>
+                                <th class="text-center">Occurrences</th>
+                                <th class="text-center">Avg Duration</th>
+                                <th class="text-center">% of Total</th>
+                                <th>Impact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in downtime_data %}
+                            <tr>
+                                <td class="font-bold text-lg">{{ forloop.counter }}</td>
+                                <td>
+                                    <div class="max-w-xs">
+                                        <div class="font-semibold">{{ item.machine__machine_name|default:"No description provided" }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-outline font-mono">{{ item.code }}</span>
+                                </td>
+                                <td>
+                                    <div class="max-w-xs">
+                                        <div class="font-semibold">{{ item.code__reason|default:"No description provided" }}</div>
+                                    </div>
+                                </td>
+                               
+                                <td class="text-center">
+                                    <div class="font-bold text-lg {% if item.total_duration > 120 %}text-red-600{% elif item.total_duration > 60 %}text-orange-600{% else %}text-green-600{% endif %}">
+                                        {{ item.total_duration|floatformat:0 }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">minutes</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-bold text-lg text-blue-600">{{ item.occurrence_count }}</div>
+                                    <div class="text-xs text-gray-500">times</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-semibold">
+                                        {{ item.avg_duration|floatformat:1 }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">min/occurrence</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-semibold">
+                                        {{ item.percentage_of_total|default:"0" }}%
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.total_duration > 240 %}
+                                        <span class="badge badge-error">Critical</span>
+                                    {% elif item.total_duration > 120 %}
+                                        <span class="badge badge-warning">High</span>
+                                    {% elif item.total_duration > 60 %}
+                                        <span class="badge badge-info">Medium</span>
+                                    {% else %}
+                                        <span class="badge badge-success">Low</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- No Data State -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center py-16">
+                <div class="text-6xl mb-4">⏰</div>
+                <h3 class="text-2xl font-bold mb-2">No Downtime Data Available</h3>
+                <p class="text-gray-600 mb-6">Please select a date range and optionally a production line to analyze downtime patterns.</p>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <span class="badge badge-outline">Select start date</span>
+                    <span class="badge badge-outline">Select end date</span>
+                    <span class="badge badge-outline">Choose production line (optional)</span>
+                    <span class="badge badge-outline">Set number of top reasons</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% endblock %}

@@ -1,0 +1,38 @@
+{% comment %}
+Debug template to check pareto_data content
+Include this temporarily to debug data issues
+{% endcomment %}
+
+<div class="card bg-yellow-50 border border-yellow-200 mb-4">
+    <div class="card-body">
+        <h4 class="font-bold text-yellow-800 mb-2">Debug: Pareto Data</h4>
+        <div class="text-sm text-yellow-700">
+            <p><strong>Has pareto_data:</strong> {% if pareto_data %}Yes{% else %}No{% endif %}</p>
+            {% if pareto_data %}
+            <p><strong>Categories count:</strong> {{ pareto_data.categories|length }}</p>
+            <p><strong>Values count:</strong> {{ pareto_data.values|length }}</p>
+            <p><strong>Cumulative percentages count:</strong> {{ pareto_data.cumulative_percentages|length }}</p>
+            <p><strong>Total duration:</strong> {{ pareto_data.total_duration }}</p>
+            <p><strong>Pareto 80 index:</strong> {{ pareto_data.pareto_80_index|default:"None" }}</p>
+            
+            {% if pareto_data.categories %}
+            <div class="mt-2">
+                <strong>Sample data (first 3):</strong>
+                <ul class="list-disc list-inside mt-1">
+                    {% for category in pareto_data.categories|slice:":3" %}
+                    <li>{{ forloop.counter }}: {{ category }}</li>
+                    {% endfor %}
+                </ul>
+                <div class="mt-2">
+                    <strong>Values:</strong> {{ pareto_data.values|slice:":3" }}<br>
+                    <strong>Percentages:</strong> {{ pareto_data.cumulative_percentages|slice:":3" }}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <p class="text-red-600">No pareto_data found in template context</p>
+            {% endif %}
+        </div>
+    </div>
+</div>

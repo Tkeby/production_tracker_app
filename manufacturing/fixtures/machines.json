@@ -1,0 +1,36 @@
+{
+  "machines": [
+    {
+      "production_line_name": "Line A",
+      "machine_name": "Filler A1",
+      "machine_code": "FA01",
+      "rated_output": 10000,
+      "main_machine": true,
+      "machine_description": ""
+    },
+    {
+      "production_line_name": "Line B",
+      "machine_name": "Filler B1",
+      "machine_code": "FB01",
+      "rated_output": 10000,
+      "main_machine": true,
+      "machine_description": ""
+    },
+    {
+      "production_line_name": "Line C",
+      "machine_name": "Filler C1",
+      "machine_code": "FC01",
+      "rated_output": 20000,
+      "main_machine": true,
+      "machine_description": ""
+    },
+    {
+      "production_line_name": "Line CAN",
+      "machine_name": "Filler CAN1",
+      "machine_code": "FCAN01",
+      "rated_output": 15000,
+      "main_machine": true,
+      "machine_description": ""
+    }
+  ]
+}

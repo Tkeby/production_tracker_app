@@ -1,10 +1,13 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from manufacturing.models import (
-    ProductionLine, Product, PackageSize, Shift, ManufacturingOrder,
+    ProductionLine, Product, PackageSize, Shift,
     Machine, DowntimeCode
 )
 from datetime import time
+import re
+import json
+import os
 
 User = get_user_model()
 
@@ -14,115 +17,23 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write('Creating sample data...')
 
-        # Create Production Lines
-        line1, created = ProductionLine.objects.get_or_create(
-            name='Line A',
-            defaults={'description': 'Main production line for PET bottles', 'rated_speed': 12000}
-        )
-        line2, created = ProductionLine.objects.get_or_create(
-            name='Line B', 
-            defaults={'description': 'Secondary production line for cans', 'rated_speed': 8000}
-        )
+        # Create Production Lines from fixture
+        self.create_production_lines_from_fixture()
 
-        # Create Products
-        product1, created = Product.objects.get_or_create(
-            product_code='COLA-001',
-            defaults={'name': 'Classic Cola', 'standard_syrup_ratio': 1.2}
-        )
-        product2, created = Product.objects.get_or_create(
-            product_code='LEMON-001',
-            defaults={'name': 'Lemon Soda', 'standard_syrup_ratio': 1.1}
-        )
+        # Create Products from fixture
+        self.create_products_from_fixture()
 
-        # Create Package Sizes
-        package1, created = PackageSize.objects.get_or_create(
-            size='500ml',
-            package_type='PET',
-            defaults={'volume_ml': 500}
-        )
-        package2, created = PackageSize.objects.get_or_create(
-            size='330ml',
-            package_type='CAN',
-            defaults={'volume_ml': 330}
-        )
-        package3, created = PackageSize.objects.get_or_create(
-            size='330ml',
-            package_type='PET',
-            defaults={'volume_ml': 330}
-        )
-        package4, created = PackageSize.objects.get_or_create(
-            size='250ml',
-            package_type='CAN',
-            defaults={'volume_ml': 250}
-        )
+        # Create Package Sizes from fixture
+        self.create_package_sizes_from_fixture()
 
-        # Create Shifts
-        shift1, created = Shift.objects.get_or_create(
-            name='8H_SHIFT_1',
-            defaults={'start_time': time(7, 0), 'end_time': time(15, 0), 'duration_hours': 8}
-        )
-        shift2, created = Shift.objects.get_or_create(
-            name='8H_SHIFT_2',
-            defaults={'start_time': time(15, 0), 'end_time': time(23, 0), 'duration_hours': 8}
-        )
-        shift3, created = Shift.objects.get_or_create(
-            name='8H_SHIFT_3',
-            defaults={'start_time': time(23, 0), 'end_time': time(7, 0), 'duration_hours': 8}
-        )
+        # Create Shifts from fixture
+        self.create_shifts_from_fixture()
+        # Create Machines from fixture
+        self.create_machines_from_fixture()
 
-        shift4, created = Shift.objects.get_or_create(
-            name='12H_SHIFT_1',
-            defaults={'start_time': time(7, 0), 'end_time': time(19, 0), 'duration_hours': 12}
-        )
-        shift5, created = Shift.objects.get_or_create(
-            name='12H_SHIFT_2',
-            defaults={'start_time': time(19, 0), 'end_time': time(7, 0), 'duration_hours': 12}
-        )
-        # Create Machines
-        machine1, created = Machine.objects.get_or_create(
-            production_line=line1,
-            machine_name='Filler A1',
-            defaults={'machine_code': 'FA01', 'rated_output': 12000}
-        )
-        machine2, created = Machine.objects.get_or_create(
-            production_line=line2,
-            machine_name='Filler B1',
-            defaults={'machine_code': 'FB01', 'rated_output': 8000}
-        )
+        # Create Downtime Codes from fixture
+        self.create_downtime_codes_from_fixture()
 
-        # Create Downtime Codes
-        code1, created = DowntimeCode.objects.get_or_create(
-            machine=machine1,
-            code='M001',
-            defaults={'reason': 'Mechanical failure'}
-        )
-        code2, created = DowntimeCode.objects.get_or_create(
-            machine=machine1,
-            code='C001',
-            defaults={'reason': 'Changeover'}
-        )
-
-        # Create Sample Manufacturing Orders
-        order1, created = ManufacturingOrder.objects.get_or_create(
-            order_number='MO-2024-001',
-            defaults={
-                'order_date': '2024-01-15',
-                'product': product1,
-                'package_size': package1,
-                'quantity': 10000,
-                'status': 'Pending'
-            }
-        )
-        order2, created = ManufacturingOrder.objects.get_or_create(
-            order_number='MO-2024-002',
-            defaults={
-                'order_date': '2024-01-15',
-                'product': product2,
-                'package_size': package2,
-                'quantity': 15000,
-                'status': 'In Progress'
-            }
-        )
 
         self.stdout.write(
             self.style.SUCCESS('Successfully created sample data!')
@@ -133,7 +44,283 @@ class Command(BaseCommand):
             f'- {Product.objects.count()} Products\n'
             f'- {PackageSize.objects.count()} Package Sizes\n'
             f'- {Shift.objects.count()} Shifts\n'
-            f'- {ManufacturingOrder.objects.count()} Manufacturing Orders\n'
             f'- {Machine.objects.count()} Machines\n'
             f'- {DowntimeCode.objects.count()} Downtime Codes'
         )
+
+    def create_downtime_codes_from_fixture(self):
+        """Load downtime codes from fixture file"""
+        # Get the path to the fixture file
+        fixture_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'fixtures',
+            'downtime_codes.json'
+        )
+        
+        if not os.path.exists(fixture_path):
+            self.stdout.write(
+                self.style.WARNING(f'Fixture file not found: {fixture_path}')
+            )
+            return
+        
+        try:
+            with open(fixture_path, 'r') as f:
+                data = json.load(f)
+            
+            # Get machines by their codes
+            can_machines = Machine.objects.filter(machine_code__in=['FCAN01', ])
+            pet_machines = Machine.objects.filter(machine_code__in=['FA01','FB01', 'FC01'])
+            
+            # Create CAN downtime codes
+            for can_machine in can_machines:
+                for code_data in data.get('can_codes', []):
+                    DowntimeCode.objects.get_or_create(
+                        machine=can_machine,
+                        code=code_data['code'],
+                        defaults={'reason': code_data['reason']}
+                    )
+            
+            # Create PET downtime codes
+            for pet_machine in pet_machines:
+                for code_data in data.get('pet_codes', []):
+                    DowntimeCode.objects.get_or_create(
+                        machine=pet_machine,
+                        code=code_data['code'],
+                        defaults={'reason': code_data['reason']}
+                    )
+            
+            self.stdout.write(
+                self.style.SUCCESS('Successfully loaded downtime codes from fixture')
+            )
+            
+        except json.JSONDecodeError as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error reading fixture file: {e}')
+            )
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error creating downtime codes: {e}')
+            )
+
+    def create_shifts_from_fixture(self):
+        """Load shifts from fixture file"""
+        fixture_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'fixtures',
+            'shifts.json'
+        )
+        
+        if not os.path.exists(fixture_path):
+            self.stdout.write(
+                self.style.WARNING(f'Shifts fixture file not found: {fixture_path}')
+            )
+            return
+        
+        try:
+            with open(fixture_path, 'r') as f:
+                data = json.load(f)
+            
+            for shift_data in data.get('shifts', []):
+                # Parse time strings to time objects
+                start_time = time(*[int(x) for x in shift_data['start_time'].split(':')])
+                end_time = time(*[int(x) for x in shift_data['end_time'].split(':')])
+                
+                Shift.objects.get_or_create(
+                    name=shift_data['name'],
+                    defaults={
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'duration_hours': shift_data['duration_hours']
+                    }
+                )
+            
+            self.stdout.write(
+                self.style.SUCCESS('Successfully loaded shifts from fixture')
+            )
+            
+        except json.JSONDecodeError as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error reading shifts fixture file: {e}')
+            )
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error creating shifts: {e}')
+            )
+
+    def create_machines_from_fixture(self):
+        """Load machines from fixture file"""
+        fixture_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'fixtures',
+            'machines.json'
+        )
+        
+        if not os.path.exists(fixture_path):
+            self.stdout.write(
+                self.style.WARNING(f'Machines fixture file not found: {fixture_path}')
+            )
+            return
+        
+        try:
+            with open(fixture_path, 'r') as f:
+                data = json.load(f)
+            
+            for machine_data in data.get('machines', []):
+                # Get the production line by name
+                try:
+                    production_line = ProductionLine.objects.get(
+                        name=machine_data['production_line_name']
+                    )
+                except ProductionLine.DoesNotExist:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f'Production line not found: {machine_data["production_line_name"]}'
+                        )
+                    )
+                    continue
+                
+                Machine.objects.get_or_create(
+                    production_line=production_line,
+                    machine_name=machine_data['machine_name'],
+                    defaults={
+                        'machine_code': machine_data['machine_code'],
+                        'rated_output': machine_data['rated_output'],
+                        'main_machine': machine_data['main_machine'],
+                        'machine_description': machine_data.get('machine_description', ''),
+                    }
+                )
+            
+            self.stdout.write(
+                self.style.SUCCESS('Successfully loaded machines from fixture')
+            )
+            
+        except json.JSONDecodeError as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error reading machines fixture file: {e}')
+            )
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error creating machines: {e}')
+            )
+
+    def create_production_lines_from_fixture(self):
+        """Load production lines from fixture file"""
+        fixture_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'fixtures',
+            'production_lines.json'
+        )
+        
+        if not os.path.exists(fixture_path):
+            self.stdout.write(
+                self.style.WARNING(f'Production lines fixture file not found: {fixture_path}')
+            )
+            return
+        
+        try:
+            with open(fixture_path, 'r') as f:
+                data = json.load(f)
+            
+            for line_data in data.get('production_lines', []):
+                ProductionLine.objects.get_or_create(
+                    name=line_data['name'],
+                    defaults={
+                        'description': line_data['description'],
+                        'rated_speed': line_data['rated_speed'],
+                        'is_active': line_data.get('is_active', True),
+                    }
+                )
+            
+            self.stdout.write(
+                self.style.SUCCESS('Successfully loaded production lines from fixture')
+            )
+            
+        except json.JSONDecodeError as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error reading production lines fixture file: {e}')
+            )
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error creating production lines: {e}')
+            )
+
+    def create_products_from_fixture(self):
+        """Load products from fixture file"""
+        fixture_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'fixtures',
+            'products.json'
+        )
+        
+        if not os.path.exists(fixture_path):
+            self.stdout.write(
+                self.style.WARNING(f'Products fixture file not found: {fixture_path}')
+            )
+            return
+        
+        try:
+            with open(fixture_path, 'r') as f:
+                data = json.load(f)
+            
+            for product_data in data.get('products', []):
+                Product.objects.get_or_create(
+                    product_code=product_data['product_code'],
+                    defaults={
+                        'name': product_data['name'],
+                        'standard_syrup_ratio': product_data.get('standard_syrup_ratio', 1.0),
+                    }
+                )
+            
+            self.stdout.write(
+                self.style.SUCCESS('Successfully loaded products from fixture')
+            )
+            
+        except json.JSONDecodeError as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error reading products fixture file: {e}')
+            )
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error creating products: {e}')
+            )
+
+    def create_package_sizes_from_fixture(self):
+        """Load package sizes from fixture file"""
+        fixture_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'fixtures',
+            'package_sizes.json'
+        )
+        
+        if not os.path.exists(fixture_path):
+            self.stdout.write(
+                self.style.WARNING(f'Package sizes fixture file not found: {fixture_path}')
+            )
+            return
+        
+        try:
+            with open(fixture_path, 'r') as f:
+                data = json.load(f)
+            
+            for package_data in data.get('package_sizes', []):
+                PackageSize.objects.get_or_create(
+                    size=package_data['size'],
+                    package_type=package_data['package_type'],
+                    bottle_per_pack=package_data['bottle_per_pack'],
+                    defaults={
+                        'volume_ml': package_data['volume_ml'],
+                    }
+                )
+            
+            self.stdout.write(
+                self.style.SUCCESS('Successfully loaded package sizes from fixture')
+            )
+            
+        except json.JSONDecodeError as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error reading package sizes fixture file: {e}')
+            )
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error creating package sizes: {e}')
+            )

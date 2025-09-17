@@ -23,7 +23,7 @@ class Product(models.Model):
                                                help_text="Standard syrup ratio for yield calculations")
     
     def __str__(self):
-        return f"{self.name} ({self.product_code})"
+        return f"{self.name}"
 
 class PackageSize(models.Model):
     PACKAGE_TYPES = [
@@ -34,7 +34,7 @@ class PackageSize(models.Model):
     size = models.CharField(max_length=50)  # e.g., "500ml", "1L"
     package_type = models.CharField(max_length=10, choices=PACKAGE_TYPES)
     volume_ml = models.PositiveIntegerField(help_text="Volume in milliliters",default=500)
-    
+    bottle_per_pack = models.PositiveIntegerField(default=12)
     def __str__(self):
         return f"{self.size} {self.package_type}"
 
@@ -62,6 +62,7 @@ class Machine(models.Model):
     machine_description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     rated_output = models.DecimalField(max_digits=10, decimal_places=2, help_text="Rated output in bottles per hour")
+    main_machine = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.machine_name} ({self.machine_code})"
@@ -73,40 +74,19 @@ class Machine(models.Model):
 
 class DowntimeCode(models.Model):
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
-    code = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=100)
     reason = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.code} - {self.reason}"
 
-class ManufacturingOrder(models.Model):
-    STATUS_CHOICES = [
-        ('Pending', 'Pending'),
-        ('In Progress', 'In Progress'),
-        ('Completed', 'Completed'),
-        ('Cancelled', 'Cancelled'),
-    ]
-    order_number = models.CharField(max_length=100, unique=True)
-    order_date = models.DateField()
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    package_size = models.ForeignKey(PackageSize, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(help_text="Quantity of the product to be manufactured in packs")
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return f"{self.order_number} - {self.product.name}"
-    
     class Meta:
-        verbose_name = "Manufacturing Order"
-        verbose_name_plural = "Manufacturing Orders"
+        unique_together = ['machine', 'code']
 
 class ProductionRun(models.Model):
     """Main model representing a single production run"""
     # Basic Information
-    order_number = models.ForeignKey(ManufacturingOrder, on_delete=models.CASCADE)
-    production_batch_number = models.CharField(max_length=100)
+    production_batch_number = models.CharField(max_length=100, unique=True)
     date = models.DateField()
     production_line = models.ForeignKey(ProductionLine, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -121,7 +101,7 @@ class ProductionRun(models.Model):
     # Production Data
     total_downtime_minutes = models.PositiveIntegerField(default=0)
     final_syrup_volume = models.DecimalField(max_digits=10, decimal_places=2)
-    mixing_ratio = models.CharField(max_length=50)
+    mixing_ratio = models.DecimalField(max_digits=10, decimal_places=2)
     filler_output = models.DecimalField(max_digits=10, decimal_places=2)
     good_products_pack = models.PositiveIntegerField()
     
@@ -136,8 +116,36 @@ class ProductionRun(models.Model):
     def __str__(self):
         return f"{self.production_batch_number} - {self.product.name}"
     
-    # ===== CALCULATION METHODS =====
+    @staticmethod
+    def generate_batch_number(product, package_size, shift, date):
+        """Generate production batch number from components"""
+        if not all([product, package_size, shift, date]):
+            return ""
+        
+        # Format: PRODUCT_CODE-SIZE-SHIFT_TYPE-YYYYMMDD
+        # Example: COLA-500ML-8H1-20250912
+        date_str = date.strftime('%Y%m%d') if hasattr(date, 'strftime') else str(date).replace('-', '')
+        shift_code = shift.name.replace('_SHIFT_', 'H') if hasattr(shift, 'name') else str(shift)
+        size_str = package_size.size.replace(' ', '').upper() if hasattr(package_size, 'size') else str(package_size)
+        product_code = product.product_code.upper() if hasattr(product, 'product_code') else str(product)
+        
+        batch_number = f"{product_code}-{size_str}-{shift_code}-{date_str}"
+        
+        # Ensure uniqueness by adding sequence number if needed
+        base_batch = batch_number
+        counter = 1
+        while ProductionRun.objects.filter(production_batch_number=batch_number).exists():
+            batch_number = f"{base_batch}-{counter:02d}"
+            counter += 1
+            
+        return batch_number
     
+    # ===== CALCULATION METHODS =====
+    @property
+    def good_products_in_packaging_units(self):
+        """Calculate good products in packaging units. This is the number of good products in the packaging units."""
+        return self.good_products_pack * self.package_size.bottle_per_pack
+
     @property
     def production_duration_minutes(self):
         """Calculate total production duration in minutes"""
@@ -151,6 +159,8 @@ class ProductionRun(models.Model):
         total_minutes = self.production_duration_minutes
         return total_minutes if total_minutes > 0 else self.shift.duration_hours * 60
     
+
+
     def calculate_availability(self):
         """Calculate availability = (Planned Production Time - Downtime) / Planned Production Time"""
         planned_time = self.planned_production_time_minutes
@@ -166,17 +176,18 @@ class ProductionRun(models.Model):
             return Decimal('0.00')
         
         # Get the main machine for this production line (first active machine)
-        main_machine = self.production_line.machine_set.filter(is_active=True).first()
+        main_machine = self.production_line.machine_set.filter(main_machine=True).first()
         if not main_machine:
             return Decimal('0.00')
-        
-        production_hours = Decimal(self.production_duration_minutes) / Decimal('60')
-        theoretical_output = main_machine.rated_output * production_hours
+        operating_time = Decimal(self.production_duration_minutes) - Decimal(self.total_downtime_minutes)
+        operating_hours = operating_time / Decimal('60')
+        theoretical_output = main_machine.rated_output * operating_hours
         
         if theoretical_output <= 0:
             return Decimal('0.00')
-        
-        performance = (Decimal(self.good_products_pack * 12) / theoretical_output * 100)
+       
+
+        performance = (Decimal(self.good_products_in_packaging_units) / theoretical_output * 100)
         return performance.quantize(Decimal('0.01'))
     
     def calculate_quality(self):
@@ -185,14 +196,14 @@ class ProductionRun(models.Model):
             return Decimal('0.00')
         
         packaging = self.packaging_material
-        total_products = (self.good_products_pack + 
-                         packaging.qty_product_reject + 
-                         packaging.qty_bottle_reject)
+        product_reject = packaging.qty_product_reject or 0
+        bottle_reject = packaging.qty_bottle_reject or 0
+        total_products = (self.good_products_in_packaging_units) + product_reject + bottle_reject
         
         if total_products <= 0:
             return Decimal('0.00')
         
-        quality = (Decimal(self.good_products_pack) / Decimal(total_products) * 100)
+        quality = (Decimal(self.good_products_in_packaging_units) / Decimal(total_products) * 100)
         return quality.quantize(Decimal('0.01'))
     
     def calculate_oee(self):
@@ -208,14 +219,14 @@ class ProductionRun(models.Model):
         """Calculate syrup yield percentage based on expected vs actual"""
         # This would be based on your business rules
         # Example: Expected syrup = good_products * package_volume * standard_ratio
-        expected_syrup_l = (Decimal(self.good_products_pack) * 
-                           Decimal(self.package_size.volume_ml) * 
-                           self.product.standard_syrup_ratio) / 1000
+        syrup_in_bottle = (Decimal(self.good_products_in_packaging_units) * 
+                           Decimal(self.package_size.volume_ml) 
+                           ) / (Decimal(self.mixing_ratio) * 1000)
         
-        if expected_syrup_l <= 0:
+        if syrup_in_bottle <= 0:
             return Decimal('0.00')
         
-        yield_percentage = (self.final_syrup_volume / expected_syrup_l * 100)
+        yield_percentage = (syrup_in_bottle / self.final_syrup_volume  * 100)
         return yield_percentage.quantize(Decimal('0.01'))
     
     def update_calculations(self):
@@ -234,17 +245,20 @@ class ProductionRun(models.Model):
             packaging = self.packaging_material
             
             # Preform yield
-            total_preforms = packaging.qty_preform_used + packaging.qty_preform_reject
+            preform_used = packaging.qty_preform_used or 0
+            preform_reject = packaging.qty_preform_reject or 0
+            total_preforms = preform_used + preform_reject
             if total_preforms > 0:
                 report.preform_yield_percentage = Decimal(
-                    (packaging.qty_preform_used / total_preforms) * 100
+                    (preform_used / total_preforms) * 100
                 ).quantize(Decimal('0.01'))
             
             # Bottle reject percentage
-            total_bottles = self.good_products_pack + packaging.qty_bottle_reject
+            bottle_reject = packaging.qty_bottle_reject or 0
+            total_bottles = self.good_products_pack + bottle_reject
             if total_bottles > 0:
                 report.bottle_reject_percentage = Decimal(
-                    (packaging.qty_bottle_reject / total_bottles) * 100
+                    (bottle_reject / total_bottles) * 100
                 ).quantize(Decimal('0.01'))
         
         # Calculate utility metrics if utility data exists
@@ -252,10 +266,12 @@ class ProductionRun(models.Model):
             utility = self.utility
             
             # CO2 utilization (example calculation)
-            if self.good_products_pack > 0 and utility.kg_co2 > 0:
-                expected_co2 = Decimal(self.good_products_pack) * Decimal('0.1')  # Example: 0.1kg per pack
-                report.co2_utilization_percentage = Decimal(
-                    (expected_co2 / utility.kg_co2) * 100
+            kg_co2_value = utility.kg_co2 if utility.kg_co2 is not None else Decimal('0')
+            if self.good_products_pack and kg_co2_value > 0:
+                # Example: 0.1kg per pack
+                expected_co2 = Decimal(self.good_products_pack) * Decimal('0.1')
+                report.co2_utilization_percentage = (
+                    (expected_co2 / kg_co2_value) * Decimal('100')
                 ).quantize(Decimal('0.01'))
         
         report.save()
@@ -265,15 +281,28 @@ class PackagingMaterial(models.Model):
     """Packaging materials used in a production run"""
     production_run = models.OneToOneField(ProductionRun, on_delete=models.CASCADE, related_name='packaging_material')
     
+    # PET lien specific fields
     qty_preform_used = models.PositiveIntegerField(blank=True, null=True)
     qty_cap_used = models.PositiveIntegerField(blank=True, null=True)
     qty_product_reject = models.PositiveIntegerField(blank=True, null=True)
     qty_preform_reject = models.PositiveIntegerField(blank=True, null=True)
     qty_bottle_reject = models.PositiveIntegerField(blank=True, null=True)
     qty_cap_reject = models.PositiveIntegerField(blank=True, null=True)
+
+    # Can line specific fields
+    qty_can_used = models.PositiveIntegerField(blank=True, null=True)
+    qty_empty_can_reject = models.PositiveIntegerField(blank=True, null=True)
+    qty_can_cover_used = models.PositiveIntegerField(blank=True, null=True)
+    qty_can_cover_reject = models.PositiveIntegerField(blank=True, null=True)
+    qty_carton_used = models.PositiveIntegerField(blank=True, null=True)
+    qty_carton_reject = models.PositiveIntegerField(blank=True, null=True)
+    qty_filled_can_reject = models.PositiveIntegerField(blank=True, null=True)
+    
+    # Common packaging materials
     label_reject_g = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     shrink_wrap_kg = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     stretch_wrap_g = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
 
 class Utility(models.Model):
     """Utility consumption for a production run"""
@@ -289,7 +318,7 @@ class StopEvent(models.Model):
     
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE)
     code = models.ForeignKey(DowntimeCode, on_delete=models.CASCADE)
-    reason = models.TextField()
+    reason = models.CharField(max_length=255, null=True, blank=True) #remark
     duration_minutes = models.PositiveIntegerField()
     timestamp = models.DateTimeField(auto_now_add=True)
     

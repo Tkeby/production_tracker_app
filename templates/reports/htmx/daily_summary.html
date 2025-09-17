@@ -1,0 +1,49 @@
+{% load static %}
+
+<div class="space-y-4">
+    <h4 class="font-bold text-lg">{{ date|date:"F d, Y" }} Summary</h4>
+    
+    {% if summary.daily_totals %}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="stat bg-blue-50 rounded p-3">
+            <div class="stat-value text-lg text-blue-600">{{ summary.daily_totals.total_production|floatformat:0|default:"0" }}</div>
+            <div class="stat-desc text-xs">Packs Produced</div>
+        </div>
+        <div class="stat bg-green-50 rounded p-3">
+            <div class="stat-value text-lg text-green-600">{{ summary.daily_totals.avg_oee|floatformat:1|default:"0" }}%</div>
+            <div class="stat-desc text-xs">Average OEE</div>
+        </div>
+        <div class="stat bg-orange-50 rounded p-3">
+            <div class="stat-value text-lg text-orange-600">{{ summary.daily_totals.total_downtime|floatformat:0|default:"0" }}</div>
+            <div class="stat-desc text-xs">Downtime (min)</div>
+        </div>
+        <div class="stat bg-purple-50 rounded p-3">
+            <div class="stat-value text-lg text-purple-600">{{ summary.daily_totals.total_runs|default:"0" }}</div>
+            <div class="stat-desc text-xs">Production Runs</div>
+        </div>
+    </div>
+
+    {% if summary.shifts %}
+    <div class="space-y-2">
+        <h5 class="font-semibold">Shift Breakdown</h5>
+        {% for shift_name, shift_data in summary.shifts.items %}
+        <div class="flex items-center justify-between p-2 bg-base-200 rounded">
+            <div>
+                <span class="font-semibold">{{ shift_name }}</span>
+                <span class="text-sm text-gray-600 ml-2">({{ shift_data.production_runs|length }} runs)</span>
+            </div>
+            <div class="text-right">
+                <div class="text-sm font-bold">{{ shift_data.total_production }} packs</div>
+                <div class="text-xs text-gray-500">{{ shift_data.total_downtime }} min downtime</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="text-center text-gray-500 py-8">
+        <div class="text-4xl mb-2">📊</div>
+        <p>No production data available for {{ date|date:"F d, Y" }}</p>
+    </div>
+    {% endif %}
+</div>
