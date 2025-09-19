@@ -3,8 +3,8 @@ import os
 
 # Security Settings
 DEBUG = False
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-production-secret-key')
-ALLOWED_HOSTS = ['your-domain.com', 'your-server-ip', 'localhost']
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+ALLOWED_HOSTS = ['7kilo.com', '148.113.181.101', 'localhost']
 
 # Database with WAL Mode
 DATABASES = {

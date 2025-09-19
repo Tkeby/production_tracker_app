@@ -10,6 +10,6 @@ preload_app = True
 daemon = False
 
 # Logging
-accesslog = "/home/deploy/django_starter/gunicorn_access.log"
-errorlog = "/home/deploy/django_starter/gunicorn_error.log"
+accesslog = "/home/deploy/production_tracker/gunicorn_access.log"
+errorlog = "/home/deploy/production_tracker/gunicorn_error.log"
 loglevel = "info"

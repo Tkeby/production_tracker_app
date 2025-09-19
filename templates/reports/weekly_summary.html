@@ -1,7 +1,20 @@
-{% extends 'base.html' %}
+{% extends 'layout.html' %}
 {% load static %}
 
-{% block content %}
+{% block title %}Weekly Summary Report{% endblock %}
+
+{% block subtitle %}
+<p class="text-lg md:text-xl text-base-content/70 max-w-3xl">
+    Weekly production performance analysis
+</p>
+{% endblock %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
+<li>Weekly Summary</li>
+{% endblock %}
+
+{% block main_content %}
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-7xl mx-auto">
         
