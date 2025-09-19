@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ title }} - Django Starter{% endblock %}
+
+{% block body_class %}bg-gradient-to-br from-primary/10 to-secondary/10 min-h-screen{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <!-- Header -->
+        <div class="text-center">
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Create your account
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Already have an account?
+                <a href="{% url 'account_login' %}" class="font-medium text-primary hover:text-primary-focus">
+                    Sign in here
+                </a>
+            </p>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <form class="space-y-6" method="post" action="{% url 'account_signup' %}">
+                    {% csrf_token %}
+                    
+                    <!-- Display non-field errors -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-error">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Email field -->
+                    <div class="form-control">
+                        <label class="label" for="{{ form.email.id_for_label }}">
+                            <span class="label-text font-medium">Email address</span>
+                        </label>
+                        {% render_field form.email class="input input-bordered w-full" placeholder="Enter your email" %}
+                        {% if form.email.errors %}
+                            <label class="label">
+                                {% for error in form.email.errors %}
+                                    <span class="label-text-alt text-error">{{ error }}</span>
+                                {% endfor %}
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password field -->
+                    <div class="form-control">
+                        <label class="label" for="{{ form.password1.id_for_label }}">
+                            <span class="label-text font-medium">Password</span>
+                        </label>
+                        {% render_field form.password1 class="input input-bordered w-full" placeholder="Create a password" %}
+                        {% if form.password1.errors %}
+                            <label class="label">
+                                {% for error in form.password1.errors %}
+                                    <span class="label-text-alt text-error">{{ error }}</span>
+                                {% endfor %}
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Confirm Password field -->
+                    <div class="form-control">
+                        <label class="label" for="{{ form.password2.id_for_label }}">
+                            <span class="label-text font-medium">Confirm Password</span>
+                        </label>
+                        {% render_field form.password2 class="input input-bordered w-full" placeholder="Confirm your password" %}
+                        {% if form.password2.errors %}
+                            <label class="label">
+                                {% for error in form.password2.errors %}
+                                    <span class="label-text-alt text-error">{{ error }}</span>
+                                {% endfor %}
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Terms and Privacy -->
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start">
+                            <input type="checkbox" class="checkbox checkbox-primary mr-3" required />
+                            <span class="label-text text-sm">
+                                I agree to the 
+                                <a href="#" class="link link-primary">Terms of Service</a> 
+                                and 
+                                <a href="#" class="link link-primary">Privacy Policy</a>
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Submit button -->
+                    <div class="form-control mt-6">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            Create Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Social authentication (if enabled) -->
+        {% load socialaccount %}
+        {% if providers %}
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <div class="divider">Or continue with</div>
+                    <div class="space-y-3">
+                        {% for provider in providers %}
+                            <a href="{% provider_login_url provider.id %}" class="btn btn-outline w-full">
+                                <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                                    <!-- Add provider icons here based on provider.name -->
+                                </svg>
+                                {{ provider.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

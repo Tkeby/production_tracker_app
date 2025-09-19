@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Email - Django Starter{% endblock %}
+
+{% block body_class %}bg-gradient-to-br from-primary/10 to-secondary/10 min-h-screen{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="text-center">
+            <svg class="mx-auto h-12 w-12 text-success" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M34 14l-20 20-6-6" />
+            </svg>
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Confirm Your Email
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Click the button below to confirm your email address
+            </p>
+        </div>
+
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body text-center">
+                {% if confirmation %}
+                    <p class="mb-4 text-gray-700">
+                        Please confirm that <strong>{{ confirmation.email_address.email }}</strong> 
+                        is an email address for user {{ confirmation.email_address.user }}.
+                    </p>
+                    <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Confirm Email
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-error">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>This email confirmation link expired or is invalid.</span>
+                    </div>
+                    <a href="{% url 'account_login' %}" class="btn btn-primary mt-4">
+                        Back to Login
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

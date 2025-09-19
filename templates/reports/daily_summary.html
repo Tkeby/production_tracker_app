@@ -1,23 +1,21 @@
-{% extends 'base.html' %}
+{% extends 'layout.html' %}
 {% load static %}
 
-{% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-7xl mx-auto">
-        
-        <!-- Header -->
-        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8">
-            <div>
-                <h1 class="text-4xl font-bold text-gray-900">Daily Production Summary</h1>
-                <p class="text-lg text-gray-600 mt-2">Complete overview of daily production performance</p>
-            </div>
-            <div class="breadcrumbs text-sm">
-                <ul>
-                    <li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
-                    <li>Daily Summary</li>
-                </ul>
-            </div>
-        </div>
+{% block title %}Daily Production Summary{% endblock %}
+
+{% block subtitle %}
+<p class="text-lg md:text-xl text-base-content/70 max-w-3xl">
+    Complete overview of daily production performance
+</p>
+{% endblock %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
+<li>Daily Summary</li>
+{% endblock %}
+
+{% block main_content %}
+<div class="max-w-7xl mx-auto">
 
         <!-- Filter Form -->
         <div class="card bg-base-100 shadow-xl mb-8">
@@ -165,6 +163,5 @@
         </div>
         {% endif %}
 
-    </div>
 </div>
 {% endblock %}
