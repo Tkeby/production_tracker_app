@@ -128,7 +128,7 @@ AUTHENTICATION_BACKENDS = [
 
 # Allauth settings
 ACCOUNT_LOGIN_METHODS = ['email']
-# ACCOUNT_SIGNUP_FIELDS = ['email']  # Fix the conflict warning
+ACCOUNT_SIGNUP_FIELDS = ['email']  # Fix the conflict warning
 DJANGO_ADMIN_FORCE_ALLAUTH = False
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
