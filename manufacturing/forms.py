@@ -1,4 +1,6 @@
 from django import forms
+from django.utils import timezone
+from datetime import date
 from .models import (
     ProductionRun, PackagingMaterial, Utility, StopEvent,
     ProductionLine, Product, PackageSize, Shift
@@ -9,6 +11,12 @@ class ProductionRunForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Set default values for new instances
+        if not self.instance.pk:  # Only for new instances
+            self.initial['date'] = date.today()
+            self.initial['production_start'] = timezone.now()
+            # Don't set production_end default - let it be empty for new runs
         
         # Apply DaisyUI classes and HTMX attributes to existing widgets
         # This preserves existing values while adding styling and functionality
@@ -24,16 +32,22 @@ class ProductionRunForm(forms.ModelForm):
         
         # Date field
         if 'date' in self.fields:
-            self.fields['date'].widget = forms.DateInput(attrs={
+            widget_attrs = {
                 'type': 'date',
                 'class': 'input input-bordered w-full',
                 'hx-get': '/manufacturing/htmx/generate-batch-number/',
                 'hx-target': '#batch-number-container',
                 'hx-trigger': 'change',
                 'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
-            })
+            }
+            
+            # Set value based on instance or default
             if self.instance and self.instance.pk and self.instance.date:
-                self.fields['date'].widget.attrs['value'] = self.instance.date.strftime('%Y-%m-%d')
+                widget_attrs['value'] = self.instance.date.strftime('%Y-%m-%d')
+            elif not self.instance.pk:
+                widget_attrs['value'] = date.today().strftime('%Y-%m-%d')
+                
+            self.fields['date'].widget = forms.DateInput(attrs=widget_attrs)
         
         # Production Line
         if 'production_line' in self.fields:
@@ -81,21 +95,34 @@ class ProductionRunForm(forms.ModelForm):
         
         # Production Start
         if 'production_start' in self.fields:
-            self.fields['production_start'].widget = forms.DateTimeInput(attrs={
+            widget_attrs = {
                 'type': 'datetime-local',
-                'class': 'input input-bordered w-full'
-            })
+                'class': 'input input-bordered w-full',
+                'step': '60'  # Step in seconds (60 = 1 minute)
+            }
+            
+            # Set value based on instance or default
             if self.instance and self.instance.pk and self.instance.production_start:
-                self.fields['production_start'].widget.attrs['value'] = self.instance.production_start.strftime('%Y-%m-%dT%H:%M')
+                widget_attrs['value'] = self.instance.production_start.strftime('%Y-%m-%dT%H:%M')
+            elif not self.instance.pk:
+                widget_attrs['value'] = timezone.now().strftime('%Y-%m-%dT%H:%M')
+                
+            self.fields['production_start'].widget = forms.DateTimeInput(attrs=widget_attrs)
         
         # Production End
         if 'production_end' in self.fields:
-            self.fields['production_end'].widget = forms.DateTimeInput(attrs={
+            widget_attrs = {
                 'type': 'datetime-local',
-                'class': 'input input-bordered w-full'
-            })
+                'class': 'input input-bordered w-full',
+                'step': '60'  # Step in seconds (60 = 1 minute)
+            }
+            
+            # Set value only if instance has production_end
             if self.instance and self.instance.pk and self.instance.production_end:
-                self.fields['production_end'].widget.attrs['value'] = self.instance.production_end.strftime('%Y-%m-%dT%H:%M')
+                widget_attrs['value'] = self.instance.production_end.strftime('%Y-%m-%dT%H:%M')
+            # Don't set default value for production_end - should be empty for new runs
+                
+            self.fields['production_end'].widget = forms.DateTimeInput(attrs=widget_attrs)
         
         # Filler Output
         if 'filler_output' in self.fields:
