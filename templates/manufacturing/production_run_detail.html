@@ -508,7 +508,6 @@
                             <tr>
                                 <th>Machine</th>
                                 <th>Code</th>
-                                <th>Reason</th>
                                 <th>Duration</th>
                                 <th>Time</th>
                             </tr>
@@ -521,10 +520,8 @@
                                     <div class="text-sm text-base-content/60">{{ event.machine.machine_code }}</div>
                                 </td>
                                 <td>
-                                    <div class="badge badge-error badge-outline">{{ event.code.code }}</div>
-                                </td>
-                                <td class="max-w-xs">
-                                    <div class="truncate" title="{{ event.code.reason }}">{{ event.code.reason }}</div>
+                                    <div class="truncate mb-1 " title="{{ event.code.reason }}">{{ event.code.reason }}</div>
+                                    <div class="badge badge-outline text-base-content/60">{{ event.code.code }}</div>
                                 </td>
                                 <td>
                                     <div class="badge badge-warning">{{ event.duration_minutes }}min</div>
