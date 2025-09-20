@@ -103,9 +103,10 @@
                         <thead>
                             <tr>
                                 <th>Batch Number</th>
+                                <th>Line</th>
                                 <th>Product</th>
                                 <th>Package Size</th>
-                                <th>Production</th>
+                                <th>Production</th> 
                                 <th>Syrup Yield</th>
                                 <th>Downtime</th>
                                 <th>OEE</th>
@@ -114,24 +115,34 @@
                         </thead>
                         <tbody>
                             {% for run in summary.runs %}
-                            <tr>
+                            <tr class="text-left">
                                 <td class="font-mono text-sm">
-                                    <a href="#" class="link link-primary">{{ run.production_batch_number }}</a>
+                                    <!-- only show the first 10 characters -->
+                                    <a href="#" class="link link-primary">{{ run.production_batch_number|slice:":10" }}...</a>
+                                    <!-- here we have a tooltip that shows the full batch number -->
+                                    <!-- <div class="tooltip tooltip-bottom" data-tip="{{ run.production_batch_number }}">
+                                        <a href="#" class="link link-primary">{{ run.production_batch_number|slice:":10" }}...</a>
+                                    </div> -->
+                               
+                                </td>
+                                <td>
+                                    <div class="font-semibold">{{ run.production_line.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ run.production_line.rated_speed | floatformat:0 }} <span class="text-xs text-gray-500">bph</span></div>
                                 </td>
                                 <td>
                                     <div class="font-semibold">{{ run.product.name }}</div>
                                     <div class="text-xs text-gray-500">{{ run.product.product_code }}</div>
                                 </td>
                                 <td>{{ run.package_size }}</td>
-                                <td class="text-right">
+                                <td >
                                     <div class="font-bold">{{ run.good_products_pack|floatformat:0 }}</div>
                                     <div class="text-xs text-gray-500">packs</div>
                                 </td>
-                                <td class="text-right">
+                                <td >
                                     <div class="font-bold">{{ run.report.syrup_yield_percentage|floatformat:1 }}%</div>
                                     <div class="text-xs text-gray-500">%</div>
                                 </td>
-                                <td class="text-right">
+                                <td >
                                     <div class="{% if run.total_downtime_minutes > 60 %}text-red-600 font-bold{% else %}text-green-600{% endif %}">
                                         {{ run.total_downtime_minutes }}
                                     </div>
