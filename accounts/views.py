@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from allauth.account.views import LoginView, SignupView
+from allauth.account.views import LoginView, SignupView, ConfirmEmailView, EmailVerificationSentView
 from django.contrib import messages
 
 
@@ -36,3 +36,34 @@ class CustomSignupView(SignupView):
         response = super().form_valid(form)
         messages.success(self.request, 'Account created successfully! Please check your email to verify your account.')
         return response
+
+
+class CustomConfirmEmailView(ConfirmEmailView):
+    """Custom email confirmation view extending allauth's ConfirmEmailView"""
+    template_name = 'accounts/confirm_email.html'
+    success_url = reverse_lazy('manufacturing:dashboard')  # Redirect after successful confirmation
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Confirm Email'
+        return context
+    
+    def post(self, *args, **kwargs):
+        response = super().post(*args, **kwargs)
+        # Only show success message if confirmation was successful
+        if hasattr(self, 'object') and self.object:
+            messages.success(self.request, 'Email confirmed successfully! Your account is now fully activated.')
+        return response
+
+
+class CustomEmailVerificationSentView(EmailVerificationSentView):
+    """Custom email verification sent view extending allauth's EmailVerificationSentView"""
+    template_name = 'accounts/verification_sent.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Check Your Email'
+        # Add user email if available for display
+        if self.request.user.is_authenticated:
+            context['user_email'] = self.request.user.email
+        return context

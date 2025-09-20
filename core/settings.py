@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,6 +25,11 @@ SECRET_KEY = "django-insecure-#ba6b6e4r687vlhilkp60791=&n%$1u#-2peiqyvs!wxctbsxi
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+# CSRF debugging - remove in production
+CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False
 
 ALLOWED_HOSTS = []
 
@@ -137,6 +143,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Allauth settings
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Since our User model doesn't have a username field
+
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 DJANGO_ADMIN_FORCE_ALLAUTH = False
@@ -152,8 +160,18 @@ ACCOUNT_RATE_LIMITS = {
     'login_failed': '5/d',  # 5 failed attempts per day
 }
 
-# Email backend for development (change for production)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email backend configuration
+EMAIL_BACKEND = 'core.email_backends.ResendEmailBackend'
+
+# Resend configuration
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'onboarding@yourdomain.com')
+
+# Optional: Add default tags for all emails sent via Resend
+RESEND_DEFAULT_TAGS = [
+    {"name": "app", "value": "django_starter"},
+    {"name": "environment", "value": "development" if DEBUG else "production"},
+]
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
