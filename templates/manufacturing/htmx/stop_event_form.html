@@ -1,0 +1,80 @@
+<!-- Stop Event Form Fields -->
+<div class="space-y-6">
+    <!-- Machine Selection -->
+    <div class="form-control">
+        <label class="label" for="{{ form.machine.id_for_label }}">
+            <span class="label-text font-semibold">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                </svg>
+                Machine *
+            </span>
+        </label>
+        {{ form.machine }}
+        {% if form.machine.errors %}
+            <label class="label">
+                <span class="label-text-alt text-error">{{ form.machine.errors.0 }}</span>
+            </label>
+        {% endif %}
+    </div>
+    
+    <!-- Downtime Code Selection -->
+    <div class="form-control">
+        <label class="label" for="{{ form.code.id_for_label }}">
+            <span class="label-text font-semibold">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+                Downtime Code *
+            </span>
+        </label>
+        {{ form.code }}
+        {% if form.code.errors %}
+            <label class="label">
+                <span class="label-text-alt text-error">{{ form.code.errors.0 }}</span>
+            </label>
+        {% endif %}
+        <label class="label">
+            <span class="label-text-alt">Select a machine first to see available codes</span>
+        </label>
+    </div>
+    
+    <!-- Duration -->
+    <div class="form-control">
+        <label class="label" for="{{ form.duration_minutes.id_for_label }}">
+            <span class="label-text font-semibold">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Duration (Minutes) *
+            </span>
+        </label>
+        {{ form.duration_minutes }}
+        {% if form.duration_minutes.errors %}
+            <label class="label">
+                <span class="label-text-alt text-error">{{ form.duration_minutes.errors.0 }}</span>
+            </label>
+        {% endif %}
+    </div>
+    
+    <!-- Additional Reason/Remark -->
+    <div class="form-control">
+        <label class="label" for="{{ form.reason.id_for_label }}">
+            <span class="label-text font-semibold">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Additional Notes
+            </span>
+        </label>
+        {{ form.reason }}
+        {% if form.reason.errors %}
+            <label class="label">
+                <span class="label-text-alt text-error">{{ form.reason.errors.0 }}</span>
+            </label>
+        {% endif %}
+        <label class="label">
+            <span class="label-text-alt">Optional: Add any additional details about this downtime event</span>
+        </label>
+    </div>
+</div>

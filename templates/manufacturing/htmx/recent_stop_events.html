@@ -1,0 +1,54 @@
+<!-- Recent Stop Events Section -->
+{% if production_run.stop_events.exists %}
+<div class="card bg-base-100 shadow-xl mt-8">
+    <div class="card-body">
+        <h3 class="card-title text-xl">
+            <svg class="w-6 h-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5C2.962 17.333 3.924 19 5.464 19z"></path>
+            </svg>
+            Recent Stop Events
+            <div class="badge badge-error">{{ production_run.stop_events.count }}</div>
+        </h3>
+        
+        <div class="overflow-x-auto">
+            <table class="table table-zebra">
+                <thead>
+                    <tr>
+                        <th>Machine</th>
+                        <th>Code</th>
+                        <th>Duration</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in production_run.stop_events.all|slice:":5" %}
+                    <tr>
+                        <td>
+                            <div class="font-medium">{{ event.machine.machine_name }}</div>
+                            <div class="text-sm text-base-content/60">{{ event.machine.machine_code }}</div>
+                        </td>
+                        <td>
+                            <div class="badge badge-error badge-outline">{{ event.code.code }}</div>
+                        </td>
+                        <td>
+                            <div class="badge badge-warning">{{ event.duration_minutes }}min</div>
+                        </td>
+                        <td class="text-sm text-base-content/60">
+                            {{ event.timestamp|date:"M d, H:i" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if production_run.stop_events.count > 5 %}
+        <div class="text-center mt-4">
+            <a href="{% url 'manufacturing:production_run_detail' production_run.pk %}" class="btn btn-outline btn-sm">
+                View All {{ production_run.stop_events.count }} Events
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

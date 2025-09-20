@@ -42,7 +42,7 @@
                         </svg>
                         {{ production_run.shift.get_name_display }}
                     </div>
-                    <div class="badge badge-warning badge-lg">
+                    <div id="downtime-badge" class="badge badge-warning badge-lg">
                         Current Downtime: {{ production_run.total_downtime_minutes }} min
                     </div>
                 </div>
@@ -59,160 +59,36 @@
                     Downtime Event Details
                 </h2>
                 
-                <form method="post" class="space-y-6" hx-boost="true">
-                    {% csrf_token %}
-                    
-                    <!-- Machine Selection -->
-                    <div class="form-control">
-                        <label class="label" for="{{ form.machine.id_for_label }}">
-                            <span class="label-text font-semibold">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
-                                </svg>
-                                Machine *
-                            </span>
-                        </label>
-                        {{ form.machine }}
-                        {% if form.machine.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.machine.errors.0 }}</span>
-                            </label>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Downtime Code Selection -->
-                    <div class="form-control">
-                        <label class="label" for="{{ form.code.id_for_label }}">
-                            <span class="label-text font-semibold">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                </svg>
-                                Downtime Code *
-                            </span>
-                        </label>
-                        {{ form.code }}
-                        {% if form.code.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.code.errors.0 }}</span>
-                            </label>
-                        {% endif %}
-                        <label class="label">
-                            <span class="label-text-alt">Select a machine first to see available codes</span>
-                        </label>
-                    </div>
-                    
-                    <!-- Duration -->
-                    <div class="form-control">
-                        <label class="label" for="{{ form.duration_minutes.id_for_label }}">
-                            <span class="label-text font-semibold">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Duration (Minutes) *
-                            </span>
-                        </label>
-                        {{ form.duration_minutes }}
-                        {% if form.duration_minutes.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.duration_minutes.errors.0 }}</span>
-                            </label>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Additional Reason/Remark -->
-                    <div class="form-control">
-                        <label class="label" for="{{ form.reason.id_for_label }}">
-                            <span class="label-text font-semibold">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                                Additional Notes
-                            </span>
-                        </label>
-                        {{ form.reason }}
-                        {% if form.reason.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.reason.errors.0 }}</span>
-                            </label>
-                        {% endif %}
-                        <label class="label">
-                            <span class="label-text-alt">Optional: Add any additional details about this downtime event</span>
-                        </label>
-                    </div>
-                    
-                    <!-- Form Actions -->
-                    <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t">
-                        <button type="submit" class="btn btn-error btn-lg flex-1">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5C2.962 17.333 3.924 19 5.464 19z"></path>
-                            </svg>
-                            Add Stop Event
-                        </button>
-                        <a href="{% url 'manufacturing:production_run_detail' production_run.pk %}" class="btn btn-outline btn-lg flex-1">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                            Cancel
-                        </a>
-                    </div>
-                </form>
+                <div id="stop-event-container">
+                    {% include 'manufacturing/htmx/stop_event_form_with_buttons.html' %}
+                </div>
             </div>
         </div>
         
         <!-- Current Stop Events (if any) -->
-        {% if production_run.stop_events.exists %}
-        <div class="card bg-base-100 shadow-xl mt-8">
-            <div class="card-body">
-                <h3 class="card-title text-xl">
-                    <svg class="w-6 h-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5C2.962 17.333 3.924 19 5.464 19z"></path>
-                    </svg>
-                    Recent Stop Events
-                    <div class="badge badge-error">{{ production_run.stop_events.count }}</div>
-                </h3>
-                
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra">
-                        <thead>
-                            <tr>
-                                <th>Machine</th>
-                                <th>Code</th>
-                                <th>Duration</th>
-                                <th>Time</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for event in production_run.stop_events.all|slice:":5" %}
-                            <tr>
-                                <td>
-                                    <div class="font-medium">{{ event.machine.machine_name }}</div>
-                                    <div class="text-sm text-base-content/60">{{ event.machine.machine_code }}</div>
-                                </td>
-                                <td>
-                                    <div class="badge badge-error badge-outline">{{ event.code.code }}</div>
-                                </td>
-                                <td>
-                                    <div class="badge badge-warning">{{ event.duration_minutes }}min</div>
-                                </td>
-                                <td class="text-sm text-base-content/60">
-                                    {{ event.timestamp|date:"M d, H:i" }}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                
-                {% if production_run.stop_events.count > 5 %}
-                <div class="text-center mt-4">
-                    <a href="{% url 'manufacturing:production_run_detail' production_run.pk %}" class="btn btn-outline btn-sm">
-                        View All {{ production_run.stop_events.count }} Events
-                    </a>
-                </div>
-                {% endif %}
-            </div>
+        <div id="recent-stop-events">
+            {% include 'manufacturing/htmx/recent_stop_events.html' %}
         </div>
-        {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle updating recent stop events when a new event is added
+    document.body.addEventListener('updateStopEvents', function(e) {
+        htmx.ajax('GET', "{% url 'manufacturing:htmx_recent_stop_events' production_run.pk %}", {
+            target: '#recent-stop-events',
+            swap: 'innerHTML'
+        });
+        
+        // Also update the current downtime badge in the header
+        htmx.ajax('GET', "{% url 'manufacturing:htmx_downtime_badge' production_run.pk %}", {
+            target: '#downtime-badge',
+            swap: 'innerHTML'
+        });
+    });
+});
+</script>
 {% endblock %}

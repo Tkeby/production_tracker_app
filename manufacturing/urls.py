@@ -20,4 +20,7 @@ urlpatterns = [
     path('htmx/machine-codes/', views.htmx_machine_codes, name='htmx_machine_codes'),
     path('htmx/packaging-fields/', views.htmx_packaging_fields, name='htmx_packaging_fields'),
     path('htmx/generate-batch-number/', views.htmx_generate_batch_number, name='htmx_generate_batch_number'),
+    path('htmx/stop-event/<int:production_run_pk>/', views.htmx_create_stop_event, name='htmx_create_stop_event'),
+    path('htmx/recent-stop-events/<int:production_run_pk>/', views.htmx_recent_stop_events, name='htmx_recent_stop_events'),
+    path('htmx/downtime-badge/<int:production_run_pk>/', views.htmx_downtime_badge, name='htmx_downtime_badge'),
 ]

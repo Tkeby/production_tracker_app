@@ -390,3 +390,101 @@ def htmx_generate_batch_number(request):
         'batch_number': batch_number
     })
     return HttpResponse(html)
+
+def htmx_create_stop_event(request, production_run_pk):
+    """HTMX handler for creating stop events without page refresh"""
+    production_run = get_object_or_404(ProductionRun, pk=production_run_pk)
+    
+    # Check permissions
+    if production_run.shift_teamleader != request.user:
+        return HttpResponse(
+            '<div class="alert alert-error"><span>You can only add stop events to your own production runs.</span></div>',
+            status=403
+        )
+    
+    if request.method == 'POST':
+        form = StopEventForm(request.POST)
+        
+        # Filter form fields for this production line
+        form.fields['machine'].queryset = Machine.objects.filter(
+            production_line=production_run.production_line,
+            is_active=True
+        )
+        form.fields['code'].queryset = DowntimeCode.objects.all()
+        
+        if form.is_valid():
+            # Save the stop event
+            stop_event = form.save(commit=False)
+            stop_event.production_run = production_run
+            stop_event.save()
+            
+            # Create a fresh form for the next entry
+            fresh_form = StopEventForm()
+            fresh_form.fields['machine'].queryset = Machine.objects.filter(
+                production_line=production_run.production_line,
+                is_active=True
+            )
+            fresh_form.fields['code'].queryset = DowntimeCode.objects.all()
+            
+            # Add HTMX attributes for dynamic filtering
+            fresh_form.fields['machine'].widget.attrs.update({
+                'hx-get': reverse_lazy('manufacturing:htmx_machine_codes'),
+                'hx-target': '#id_code',
+                'hx-trigger': 'change'
+            })
+            
+            # Return success response with fresh form and updated events list
+            form_html = render_to_string('manufacturing/htmx/stop_event_form_success.html', {
+                'form': fresh_form,
+                'production_run': production_run,
+                'success_message': f'Stop event added successfully! Duration: {stop_event.duration_minutes} minutes'
+            })
+            
+            response = HttpResponse(form_html)
+            # Trigger custom event to update other parts of the page
+            response['HX-Trigger-After-Swap'] = 'updateStopEvents'
+            return response
+        else:
+            # Return form with errors
+            html = render_to_string('manufacturing/htmx/stop_event_form_with_buttons.html', {
+                'form': form,
+                'production_run': production_run,
+            })
+            return HttpResponse(html)
+    
+    # GET request - return fresh form
+    form = StopEventForm()
+    form.fields['machine'].queryset = Machine.objects.filter(
+        production_line=production_run.production_line,
+        is_active=True
+    )
+    form.fields['code'].queryset = DowntimeCode.objects.all()
+    
+    # Add HTMX attributes for dynamic filtering
+    form.fields['machine'].widget.attrs.update({
+        'hx-get': reverse_lazy('manufacturing:htmx_machine_codes'),
+        'hx-target': '#id_code',
+        'hx-trigger': 'change'
+    })
+    
+    html = render_to_string('manufacturing/htmx/stop_event_form_with_buttons.html', {
+        'form': form,
+        'production_run': production_run,
+    })
+    return HttpResponse(html)
+
+def htmx_recent_stop_events(request, production_run_pk):
+    """HTMX handler for updating the recent stop events section"""
+    production_run = get_object_or_404(ProductionRun, pk=production_run_pk)
+    
+    html = render_to_string('manufacturing/htmx/recent_stop_events.html', {
+        'production_run': production_run,
+    })
+    return HttpResponse(html)
+
+def htmx_downtime_badge(request, production_run_pk):
+    """HTMX handler for updating the current downtime badge"""
+    production_run = get_object_or_404(ProductionRun, pk=production_run_pk)
+    
+    html = f'Current Downtime: {production_run.total_downtime_minutes} min'
+    return HttpResponse(html)
