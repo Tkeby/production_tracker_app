@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% load static %}
-
+{% load humanize %}
 {% block title %}Shift Summary Report{% endblock %}
 
 {% block subtitle %}
@@ -54,7 +54,7 @@
             <div class="card bg-blue-50 border border-blue-200">
                 <div class="card-body text-center">
                     <div class="text-3xl font-bold text-blue-600">
-                        {{ summary.total_production|floatformat:0|default:"0" }}
+                        {{ summary.total_production|floatformat:0|intcomma }}
                     </div>
                     <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
                 </div>
@@ -105,7 +105,6 @@
                                 <th>Batch Number</th>
                                 <th>Line</th>
                                 <th>Product</th>
-                                <th>Package Size</th>
                                 <th>Production</th> 
                                 <th>Syrup Yield</th>
                                 <th>Downtime</th>
@@ -127,30 +126,32 @@
                                 </td>
                                 <td>
                                     <div class="font-semibold">{{ run.production_line.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ run.production_line.rated_speed | floatformat:0 }} <span class="text-xs text-gray-500">bph</span></div>
+                                    <div class="text-xs text-gray-500">{{ run.production_line.rated_speed | floatformat:0|intcomma }} <span class="text-xs text-gray-500">bph</span></div>
                                 </td>
                                 <td>
                                     <div class="font-semibold">{{ run.product.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ run.product.product_code }}</div>
+                                    <div class="text-xs text-gray-500">{{ run.package_size }}</div>
                                 </td>
-                                <td>{{ run.package_size }}</td>
+                                
                                 <td >
-                                    <div class="font-bold">{{ run.good_products_pack|floatformat:0 }}</div>
+                                    <div class="font-bold">{{ run.good_products_pack|floatformat:0|intcomma }}</div>
                                     <div class="text-xs text-gray-500">packs</div>
                                 </td>
                                 <td >
-                                    <div class="font-bold">{{ run.report.syrup_yield_percentage|floatformat:1 }}%</div>
-                                    <div class="text-xs text-gray-500">%</div>
+                                    <div class="font-bold {% if run.report.syrup_yield_percentage > 95 %}text-green-600 
+                                        {% elif run.report.syrup_yield_percentage > 90 %}text-yellow-600 
+                                        {% else %}text-red-600{% endif %}">{{ run.report.syrup_yield_percentage|floatformat:1 }}%</div>
+                                    <!-- <div class="font-bold">{{ run.report.syrup_yield_percentage|floatformat:1 }}%</div> -->
                                 </td>
                                 <td >
-                                    <div class="{% if run.total_downtime_minutes > 60 %}text-red-600 font-bold{% else %}text-green-600{% endif %}">
+                                    <div class="font-bold {% if run.total_downtime_minutes > 60 %}text-red-600{% else %}text-green-600{% endif %}">
                                         {{ run.total_downtime_minutes }}
                                     </div>
                                     <div class="text-xs text-gray-500">min</div>
                                 </td>
                                 <td>
                                     <div class="font-bold">{{ run.report.oee|floatformat:1 }}%</div>
-                                    <div class="text-xs text-gray-500">%</div>
+                                    <!-- <div class="text-xs text-gray-500">%</div> -->
                                 </td>
                                 <td>
                                     <span class="badge {% if run.is_completed %}badge-success{% else %}badge-warning{% endif %}">
