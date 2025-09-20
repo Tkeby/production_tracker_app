@@ -83,14 +83,14 @@
                     <div class="text-sm text-orange-800 font-semibold">Total Downtime (min)</div>
                 </div>
             </div>
-            <div class="card bg-purple-50 border border-purple-200">
+            <!-- <div class="card bg-purple-50 border border-purple-200">
                 <div class="card-body text-center">
                     <div class="text-3xl font-bold text-purple-600">
                         {{ summary.availability_percentage|floatformat:1|default:"0" }}%
                     </div>
                     <div class="text-sm text-purple-800 font-semibold">Availability</div>
                 </div>
-            </div>
+            </div> -->
         </div>
 
         <!-- Production Runs Details -->
@@ -108,7 +108,7 @@
                                 <th>Production</th>
                                 <th>Syrup Yield</th>
                                 <th>Downtime</th>
-                                <th>Team Leader</th>
+                                <th>OEE</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -138,11 +138,8 @@
                                     <div class="text-xs text-gray-500">min</div>
                                 </td>
                                 <td>
-                                    {% if run.shift_teamleader.first_name %}
-                                        {{ run.shift_teamleader.get_full_name }}
-                                    {% else %}
-                                        {{ run.shift_teamleader.username }}
-                                    {% endif %}
+                                    <div class="font-bold">{{ run.report.oee|floatformat:1 }}%</div>
+                                    <div class="text-xs text-gray-500">%</div>
                                 </td>
                                 <td>
                                     <span class="badge {% if run.is_completed %}badge-success{% else %}badge-warning{% endif %}">
