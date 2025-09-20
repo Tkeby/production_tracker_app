@@ -96,7 +96,10 @@
         <!-- Production Runs Details -->
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
-                <h3 class="card-title text-xl mb-4">Production Runs</h3>
+                <div class="flex items-center justify-between">
+                    <h3 class="card-title text-xl mb-4">Production Runs </h3>
+                    <span class="text-sm text-gray-500 mb-4">Date: {{ form.shift_date.value }}</span>
+                </div>
                 {% if summary.runs %}
                 <div class="overflow-x-auto">
                     <table class="table table-zebra w-full">
