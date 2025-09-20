@@ -6,6 +6,9 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils.decorators import method_decorator
+from django.middleware.csrf import get_token
 from .models import (
     ProductionRun, ProductionReport, StopEvent,
     ProductionLine, Product, PackageSize, Shift, Machine, DowntimeCode
@@ -391,6 +394,7 @@ def htmx_generate_batch_number(request):
     })
     return HttpResponse(html)
 
+@ensure_csrf_cookie
 def htmx_create_stop_event(request, production_run_pk):
     """HTMX handler for creating stop events without page refresh"""
     production_run = get_object_or_404(ProductionRun, pk=production_run_pk)
@@ -437,7 +441,8 @@ def htmx_create_stop_event(request, production_run_pk):
             form_html = render_to_string('manufacturing/htmx/stop_event_form_success.html', {
                 'form': fresh_form,
                 'production_run': production_run,
-                'success_message': f'Stop event added successfully! Duration: {stop_event.duration_minutes} minutes'
+                'success_message': f'Stop event added successfully! Duration: {stop_event.duration_minutes} minutes',
+                'csrf_token': get_token(request)
             })
             
             response = HttpResponse(form_html)
@@ -449,6 +454,7 @@ def htmx_create_stop_event(request, production_run_pk):
             html = render_to_string('manufacturing/htmx/stop_event_form_with_buttons.html', {
                 'form': form,
                 'production_run': production_run,
+                'csrf_token': get_token(request)
             })
             return HttpResponse(html)
     
@@ -470,6 +476,7 @@ def htmx_create_stop_event(request, production_run_pk):
     html = render_to_string('manufacturing/htmx/stop_event_form_with_buttons.html', {
         'form': form,
         'production_run': production_run,
+        'csrf_token': get_token(request)
     })
     return HttpResponse(html)
 

@@ -11,7 +11,8 @@
     class="space-y-6"
     hx-post="{% url 'manufacturing:htmx_create_stop_event' production_run.pk %}"
     hx-target="#stop-event-container"
-    hx-swap="innerHTML">
+    hx-swap="innerHTML"
+    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     {% csrf_token %}
     
     <!-- Fresh form for next entry -->
