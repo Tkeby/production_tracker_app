@@ -9,6 +9,35 @@ class ProductionCalculationService:
     """Service class for complex production calculations and analytics"""
     
     @staticmethod
+    def calculate_weighted_avg_syrup_yield(queryset) -> Optional[float]:
+        """
+        Calculate weighted average syrup yield based on production pack proportion
+        
+        Args:
+            queryset: QuerySet of ProductionRun objects
+            
+        Returns:
+            float: Weighted average syrup yield or None if no valid data
+        """
+        runs_with_data = queryset.select_related('report').filter(
+            report__syrup_yield_percentage__isnull=False,
+            good_products_pack__gt=0
+        )
+        
+        total_weighted_syrup_yield = Decimal('0')
+        total_production_for_yield = 0
+        
+        for run in runs_with_data:
+            if run.report and run.report.syrup_yield_percentage is not None:
+                weighted_yield = Decimal(str(run.report.syrup_yield_percentage)) * run.good_products_pack
+                total_weighted_syrup_yield += weighted_yield
+                total_production_for_yield += run.good_products_pack
+        
+        if total_production_for_yield > 0:
+            return float(total_weighted_syrup_yield / total_production_for_yield)
+        return None
+    
+    @staticmethod
     def calculate_shift_summary(shift_date: date, production_line: Optional[ProductionLine] = None, 
                                shift_type: Optional[str] = None) -> Dict:
         """Calculate summary metrics for a specific shift"""
@@ -21,7 +50,10 @@ class ProductionCalculationService:
         if shift_type:
             queryset = queryset.filter(shift__name=shift_type)
         
-        # Aggregate data
+        # Calculate weighted avg syrup yield based on production pack proportion for each run
+        weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
+
+        # Aggregate other data
         summary = queryset.aggregate(
             total_production=Sum('good_products_pack'),
             total_downtime=Sum('total_downtime_minutes'),
@@ -29,6 +61,9 @@ class ProductionCalculationService:
             production_runs_count=Count('id'),
             total_syrup=Sum('final_syrup_volume')
         )
+        
+        # Add weighted average syrup yield to summary
+        summary['avg_syrup_yield'] = weighted_avg_syrup_yield
         
         # Calculate additional metrics
         total_planned_time = sum([run.planned_production_time_minutes for run in queryset])
@@ -66,6 +101,9 @@ class ProductionCalculationService:
             shift_summaries[shift_key]['total_production'] += run.good_products_pack
             shift_summaries[shift_key]['total_downtime'] += run.total_downtime_minutes
         
+        # Calculate weighted average syrup yield for daily totals
+        weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
+
         # Daily totals
         daily_totals = queryset.aggregate(
             total_production=Sum('good_products_pack'),
@@ -73,6 +111,9 @@ class ProductionCalculationService:
             avg_oee=Avg('report__oee'),
             total_runs=Count('id')
         )
+        
+        # Add weighted average syrup yield
+        daily_totals['avg_syrup_yield'] = weighted_avg_syrup_yield
         
         return {
             'date': target_date,
@@ -101,6 +142,9 @@ class ProductionCalculationService:
                 single_date, production_line
             )
         
+        # Calculate weighted average syrup yield for weekly totals
+        weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
+
         # Weekly totals
         weekly_totals = queryset.aggregate(
             total_production=Sum('good_products_pack'),
@@ -108,6 +152,9 @@ class ProductionCalculationService:
             avg_oee=Avg('report__oee'),
             total_runs=Count('id')
         )
+        
+        # Add weighted average syrup yield
+        weekly_totals['avg_syrup_yield'] = weighted_avg_syrup_yield
         
         return {
             'week_start': week_start_date,
@@ -192,12 +239,19 @@ class ProductionCalculationService:
         if production_line:
             queryset = queryset.filter(production_line=production_line)
         
-        base_data['production_summary'] = queryset.aggregate(
+        # Calculate weighted average syrup yield for production summary
+        weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
+
+        production_summary = queryset.aggregate(
             total_production=Sum('good_products_pack'),
             total_downtime=Sum('total_downtime_minutes'),
             avg_oee=Avg('report__oee'),
             total_runs=Count('id')
         )
+        
+        # Add weighted average syrup yield
+        production_summary['avg_syrup_yield'] = weighted_avg_syrup_yield
+        base_data['production_summary'] = production_summary
         
         return base_data
     

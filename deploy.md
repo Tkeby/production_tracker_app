@@ -81,6 +81,11 @@ Create `/home/deploy/production_tracker/.env`:
 ```bash
 DJANGO_SETTINGS_MODULE=core.settings_prod
 DJANGO_SECRET_KEY=your-super-secret-production-key-here
+
+ADMIN_URL=your-secure-admin-url-here/
+
+RESEND_API_KEY=your-super-secret-resend-api-key
+DEFAULT_FROM_EMAIL=email@yourdomain.com
 ```
 
 **Important**: Generate a new secret key for production:
@@ -264,6 +269,23 @@ sudo ln -s /etc/nginx/sites-available/production_tracker /etc/nginx/sites-enable
 sudo nginx -t  # Test configuration
 sudo systemctl restart nginx
 ```
+
+### 5.1 Optional - block admin url requests by ip
+```bash 
+# In /etc/nginx/sites-available/production_tracker
+location /your-custom-secure-admin-url/ {
+    allow 203.0.113.1;  # Replace with your IP address
+    allow 192.168.1.0/24;  # Example Your office network
+    deny all;
+    
+    proxy_pass http://production_tracker;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
 
 ## Phase 6: SSL/HTTPS Setup
 
