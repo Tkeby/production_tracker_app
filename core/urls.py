@@ -5,7 +5,7 @@ from django.urls import include, path
 from manufacturing.admin import manufacturing_admin_site
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path(settings.ADMIN_URL, admin.site.urls),  # Dynamic admin URL for security
     path("production-admin/", manufacturing_admin_site.urls),  # Custom production admin - this will be removed later.
     path('accounts/', include('accounts.urls')),
     path('', include('home.urls')),

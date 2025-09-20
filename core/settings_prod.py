@@ -1,6 +1,9 @@
 from .settings import *
 import os
 
+# Custom Admin URL for security
+ADMIN_URL = os.environ.get('ADMIN_URL', 'admin/')
+
 # Security Settings
 DEBUG = False
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')

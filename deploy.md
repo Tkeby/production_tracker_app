@@ -492,6 +492,7 @@ sudo systemctl status nginx
 # View logs
 sudo journalctl -u production_tracker -f
 tail -f /home/deploy/production_tracker/gunicorn_error.log
+tail -f /home/deploy/production_tracker/gunicorn_access.log
 tail -f /home/deploy/production_tracker/django.log
 
 # Restart services
