@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% load humanize %}
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-7xl mx-auto">
@@ -101,7 +101,7 @@
                     </svg>
                 </div>
                 <div class="stat-title">Good Products</div>
-                <div class="stat-value text-primary">{{ object.good_products_pack|floatformat:0 }}</div>
+                <div class="stat-value text-primary">{{ object.good_products_pack|floatformat:0|intcomma }}</div>
                 <div class="stat-desc">Packs produced</div>
             </div>
             
@@ -112,8 +112,13 @@
                     </svg>
                 </div>
                 <div class="stat-title">Syrup Yield</div>
+                {% if object.report %}
                 <div class="stat-value text-secondary">{{ object.report.syrup_yield_percentage|floatformat:0 }}</div>
                 <div class="stat-desc">%</div>
+                {% else %}
+                <div class="stat-value text-secondary">N/A</div>
+                <div class="stat-desc">No report data</div>
+                {% endif %}
             </div>
             
             <div class="stat">
@@ -155,7 +160,7 @@
                                 {% endif %}
                                 <tr>
                                     <td class="font-medium">Syrup Volume</td>
-                                    <td>{{ object.final_syrup_volume }}L</td>
+                                    <td>{{ object.final_syrup_volume|floatformat:0|intcomma }}L</td>
                                 </tr>
                                 <tr>
                                     <td class="font-medium">Mixing Ratio</td>
@@ -270,21 +275,21 @@
                                             {% if object.packaging_material.qty_can_used %}
                                             <tr>
                                                 <td>Cans Used</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_used|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_used|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
                                             {% if object.packaging_material.qty_can_cover_used %}
                                             <tr>
                                                 <td>Can Covers Used</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_cover_used|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_cover_used|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
                                             {% if object.packaging_material.qty_carton_used %}
                                             <tr>
                                                 <td>Cartons Used</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_carton_used|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_carton_used|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
@@ -301,28 +306,28 @@
                                             {% if object.packaging_material.qty_empty_can_reject %}
                                             <tr class="text-error">
                                                 <td>Empty Can Rejects</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_empty_can_reject|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_empty_can_reject|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
                                             {% if object.packaging_material.qty_can_cover_reject %}
                                             <tr class="text-error">
                                                 <td>Can Cover Rejects</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_cover_reject|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_can_cover_reject|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
                                             {% if object.packaging_material.qty_carton_reject %}
                                             <tr class="text-error">
                                                 <td>Carton Rejects</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_carton_reject|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_carton_reject|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
                                             {% if object.packaging_material.qty_filled_can_reject %}
                                             <tr class="text-error">
                                                 <td>Filled Can Rejects</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_filled_can_reject|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_filled_can_reject|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
@@ -331,14 +336,14 @@
                                             {% if object.packaging_material.qty_preform_used %}
                                             <tr>
                                                 <td>Preforms Used</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_preform_used|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_preform_used|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
                                             {% if object.packaging_material.qty_cap_used %}
                                             <tr>
                                                 <td>Caps Used</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_cap_used|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_cap_used|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
@@ -355,21 +360,21 @@
                                             {% if object.packaging_material.qty_preform_reject %}
                                             <tr class="text-error">
                                                 <td>Preform Rejects</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_preform_reject|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_preform_reject|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
                                             {% if object.packaging_material.qty_bottle_reject %}
                                             <tr class="text-error">
                                                 <td>Bottle Rejects</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_bottle_reject|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_bottle_reject|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                             
                                             {% if object.packaging_material.qty_cap_reject %}
                                             <tr class="text-error">
                                                 <td>Cap Rejects</td>
-                                                <td class="text-right font-mono">{{ object.packaging_material.qty_cap_reject|floatformat:0 }}</td>
+                                                <td class="text-right font-mono">{{ object.packaging_material.qty_cap_reject|floatformat:0|intcomma }}</td>
                                             </tr>
                                             {% endif %}
                                         {% endif %}
@@ -387,7 +392,7 @@
                                         {% if object.packaging_material.qty_product_reject %}
                                         <tr class="text-error">
                                             <td>Product Rejects</td>
-                                            <td class="text-right font-mono">{{ object.packaging_material.qty_product_reject|floatformat:0 }}</td>
+                                            <td class="text-right font-mono">{{ object.packaging_material.qty_product_reject|floatformat:0|intcomma }}</td>
                                         </tr>
                                         {% endif %}
                                         
@@ -441,24 +446,24 @@
                                 <tbody>
                                     <tr>
                                         <td>CO2 Consumption</td>
-                                        <td class="text-right font-mono">{{ object.utility.kg_co2 }} kg</td>
+                                        <td class="text-right font-mono">{{ object.utility.kg_co2|floatformat:0|intcomma }} kg</td>
                                     </tr>
                                     {% if object.utility.boiler_fuel_l %}
                                     <tr>
                                         <td>Boiler Fuel</td>
-                                        <td class="text-right font-mono">{{ object.utility.boiler_fuel_l }} L</td>
+                                        <td class="text-right font-mono">{{ object.utility.boiler_fuel_l|floatformat:0|intcomma }} L</td>
                                     </tr>
                                     {% endif %}
                                     {% if object.utility.generator_fuel_l %}
                                     <tr>
                                         <td>Generator Fuel</td>
-                                        <td class="text-right font-mono">{{ object.utility.generator_fuel_l }} L</td>
+                                        <td class="text-right font-mono">{{ object.utility.generator_fuel_l|floatformat:0|intcomma }} L</td>
                                     </tr>
                                     {% endif %}
                                     {% if object.utility.edg_power_consumption %}
                                     <tr>
                                         <td>EDG Power</td>
-                                        <td class="text-right font-mono">{{ object.utility.edg_power_consumption }} kWh</td>
+                                        <td class="text-right font-mono">{{ object.utility.edg_power_consumption|floatformat:0|intcomma }} kWh</td>
                                     </tr>
                                     {% endif %}
                                 </tbody>

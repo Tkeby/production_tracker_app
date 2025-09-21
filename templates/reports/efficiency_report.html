@@ -213,8 +213,10 @@
                                 {% for item in report.downtime_analysis|slice:":7" %}
                                 <tr>
                                     <td>
+                                        <div class="flex flex-col gap-1">
+                                        <span class="font-mono">{{ item.code__reason }}</span>
                                         <span class="badge badge-outline badge-xs font-mono">{{ item.code }}</span>
-                                        
+                                        </div>
                                     </td>
                                     <td class="font-bold {% if item.total_duration > 120 %}text-red-600{% elif item.total_duration > 60 %}text-orange-600{% else %}text-green-600{% endif %}">
                                         {{ item.total_duration }} min
@@ -378,7 +380,7 @@ const downtimeAnalysisChart = new Chart(ctxDowntime, {
     data: {
         labels: [
             {% for item in report.downtime_analysis|slice:":5" %}
-                '{{ item.code }}'{% if not forloop.last %},{% endif %}
+                '{{ item.code__reason }}'{% if not forloop.last %},{% endif %}
             {% endfor %}
         ],
         datasets: [{
