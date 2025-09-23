@@ -493,5 +493,7 @@ def htmx_downtime_badge(request, production_run_pk):
     """HTMX handler for updating the current downtime badge"""
     production_run = get_object_or_404(ProductionRun, pk=production_run_pk)
     
-    html = f'Current Downtime: {production_run.total_downtime_minutes} min'
+    html = render_to_string('manufacturing/htmx/downtime_badge.html', {
+        'production_run': production_run,
+    })
     return HttpResponse(html)

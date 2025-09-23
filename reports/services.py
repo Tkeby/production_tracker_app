@@ -1,4 +1,4 @@
-from django.db.models import Sum, Avg, Count, Q
+from django.db.models import Sum, Avg, Count, Q, Case, When
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 from decimal import Decimal
@@ -57,6 +57,18 @@ class ProductionCalculationService:
         summary = queryset.aggregate(
             total_production=Sum('good_products_pack'),
             total_downtime=Sum('total_downtime_minutes'),
+            total_unplanned_downtime=Sum(
+                Case(
+                    When(stop_events__is_planned=False, then='stop_events__duration_minutes'),
+                    default=0
+                )
+            ),
+            total_planned_downtime=Sum(
+                Case(
+                    When(stop_events__is_planned=True, then='stop_events__duration_minutes'),
+                    default=0
+                )
+            ),
             avg_oee=Avg('report__oee'),
             production_runs_count=Count('id'),
             total_syrup=Sum('final_syrup_volume')

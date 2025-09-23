@@ -159,6 +159,18 @@ class ProductionRun(models.Model):
         total_minutes = self.production_duration_minutes
         return total_minutes if total_minutes > 0 else self.shift.duration_hours * 60
     
+    @property
+    def planned_downtime_minutes(self):
+        """Calculate total planned downtime minutes"""
+        return sum(
+            self.stop_events.filter(is_planned=True).values_list('duration_minutes', flat=True)
+        )
+    
+    @property
+    def unplanned_downtime_minutes(self):
+        """Calculate total unplanned downtime minutes"""
+        return self.total_downtime_minutes
+    
 
 
     def calculate_availability(self):
@@ -167,7 +179,7 @@ class ProductionRun(models.Model):
         if planned_time <= 0:
             return Decimal('0.00')
         
-        actual_runtime = planned_time - self.total_downtime_minutes
+        actual_runtime = planned_time - self.unplanned_downtime_minutes
         return Decimal(actual_runtime / planned_time * 100).quantize(Decimal('0.01'))
     
     def calculate_performance(self):
@@ -179,7 +191,7 @@ class ProductionRun(models.Model):
         main_machine = self.production_line.machine_set.filter(main_machine=True).first()
         if not main_machine:
             return Decimal('0.00')
-        operating_time = Decimal(self.production_duration_minutes) - Decimal(self.total_downtime_minutes)
+        operating_time = Decimal(self.production_duration_minutes) - Decimal(self.unplanned_downtime_minutes)
         operating_hours = operating_time / Decimal('60')
         theoretical_output = main_machine.rated_output * operating_hours
         
@@ -321,7 +333,8 @@ class StopEvent(models.Model):
     reason = models.CharField(max_length=255, null=True, blank=True) #remark
     duration_minutes = models.PositiveIntegerField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    
+    is_planned = models.BooleanField(default=False) #if the downtime is planned or not (CIP,startup,shutdown,etc.)
+
     def __str__(self):
         return f"{self.machine.machine_name} - {self.code} ({self.duration_minutes}min)"
     
@@ -329,7 +342,8 @@ class StopEvent(models.Model):
         super().save(*args, **kwargs)
         # Update total downtime in production run
         self.production_run.total_downtime_minutes = sum(
-            self.production_run.stop_events.values_list('duration_minutes', flat=True)
+            # exclude planned downtime from total downtime
+            self.production_run.stop_events.values_list('duration_minutes', flat=True).exclude(is_planned=True)
         )
         self.production_run.save()
 

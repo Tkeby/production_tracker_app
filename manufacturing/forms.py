@@ -317,6 +317,9 @@ class StopEventForm(forms.ModelForm):
             'class': 'input input-bordered w-full',
             'placeholder': 'Minutes'
         })
+        self.fields['is_planned'].widget.attrs.update({
+            'class': 'checkbox checkbox-primary checkbox-lg'
+        })
     
     class Meta:
         model = StopEvent

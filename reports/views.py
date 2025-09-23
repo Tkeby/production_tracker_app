@@ -193,7 +193,7 @@ class DowntimeAnalysisView(TemplateView):
             pareto_data = ProductionCalculationService.calculate_downtime_pareto(
                 start_date, end_date, production_line, limit
             )
-            context['pareto_data'] = pareto_data
+            context['pareto_data'] = pareto_data 
             
             # Calculate summary statistics for template
             if downtime_data:

@@ -30,7 +30,7 @@ class DowntimeCodeInline(admin.TabularInline):
 class StopEventInline(admin.TabularInline):
     model = StopEvent
     extra = 0
-    fields = ['machine', 'code', 'reason', 'duration_minutes', 'timestamp']
+    fields = ['machine', 'code', 'reason','is_planned', 'duration_minutes', 'timestamp']
     readonly_fields = ['timestamp']
 
 
@@ -278,7 +278,7 @@ class StopEventAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Event Details', {
-            'fields': ('production_run', 'machine', 'code')
+            'fields': ('production_run', 'machine', 'code', 'is_planned')
         }),
         ('Duration & Details', {
             'fields': ('duration_minutes', 'reason', 'timestamp')
