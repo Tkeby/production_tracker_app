@@ -53,26 +53,34 @@ class ProductionCalculationService:
         # Calculate weighted avg syrup yield based on production pack proportion for each run
         weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
 
-        # Aggregate other data
-        summary = queryset.aggregate(
+        # Aggregate production-run level fields first to avoid duplication from joins
+        run_totals = queryset.aggregate(
             total_production=Sum('good_products_pack'),
             total_downtime=Sum('total_downtime_minutes'),
+            avg_oee=Avg('report__oee'),
+            production_runs_count=Count('id'),
+            total_syrup=Sum('final_syrup_volume')
+        )
+
+        # Aggregate planned/unplanned downtime from StopEvent to prevent multiplying rows
+        stop_events_qs = StopEvent.objects.filter(production_run__in=queryset)
+        stop_agg = stop_events_qs.aggregate(
             total_unplanned_downtime=Sum(
                 Case(
-                    When(stop_events__is_planned=False, then='stop_events__duration_minutes'),
+                    When(is_planned=False, then='duration_minutes'),
                     default=0
                 )
             ),
             total_planned_downtime=Sum(
                 Case(
-                    When(stop_events__is_planned=True, then='stop_events__duration_minutes'),
+                    When(is_planned=True, then='duration_minutes'),
                     default=0
                 )
-            ),
-            avg_oee=Avg('report__oee'),
-            production_runs_count=Count('id'),
-            total_syrup=Sum('final_syrup_volume')
+            )
         )
+
+        # Merge both summaries
+        summary = {**run_totals, **stop_agg}
         
         # Add weighted average syrup yield to summary
         summary['avg_syrup_yield'] = weighted_avg_syrup_yield
