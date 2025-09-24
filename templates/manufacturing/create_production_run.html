@@ -42,6 +42,36 @@
                     },
                     isLastTab() {
                         return this.activeTab === this.tabs[this.tabs.length - 1];
+                    },
+                    generateBatchNumber() {
+                        // Get the production line field
+                        const productionLineField = document.querySelector('[name=production_line]');
+                        if (!productionLineField) return;
+                        
+                        // Get all required fields for batch generation
+                        const product = document.querySelector('[name=product]')?.value;
+                        const packageSize = document.querySelector('[name=package_size]')?.value;
+                        const shift = document.querySelector('[name=shift]')?.value;
+                        const date = document.querySelector('[name=date]')?.value;
+                        const productionLine = productionLineField.value;
+                        
+                        // Only generate if all fields have values
+                        if (product && packageSize && shift && date && productionLine) {
+                            // Build query params
+                            const params = new URLSearchParams({
+                                product: product,
+                                package_size: packageSize,
+                                shift: shift,
+                                date: date,
+                                production_line: productionLine
+                            });
+                            
+                            // Make HTMX request for batch number
+                            htmx.ajax('GET', '/manufacturing/htmx/generate-batch-number/?' + params.toString(), {
+                                target: '#batch-number-container',
+                                swap: 'outerHTML'
+                            });
+                        }
                     }
                 }">
                     {% csrf_token %}
@@ -100,7 +130,9 @@
                                         <span class="label-text">Production Line</span>
                                         <span class="label-text-alt text-error">*</span>
                                     </label>
-                                    {{ form.production_line }}
+                                    <div @change="generateBatchNumber()">
+                                        {{ form.production_line }}
+                                    </div>
                                     {% if form.production_line.errors %}
                                         <label class="label">
                                             <span class="label-text-alt text-error">{{ form.production_line.errors.0 }}</span>

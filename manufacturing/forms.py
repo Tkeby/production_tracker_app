@@ -38,7 +38,7 @@ class ProductionRunForm(forms.ModelForm):
                 'hx-get': '/manufacturing/htmx/generate-batch-number/',
                 'hx-target': '#batch-number-container',
                 'hx-trigger': 'change',
-                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
+                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"], [name="production_line"]'
             }
             
             # Set value based on instance or default
@@ -51,17 +51,19 @@ class ProductionRunForm(forms.ModelForm):
         
         # Production Line
         if 'production_line' in self.fields:
-            htmx_attrs = {
+            # First, set up packaging fields HTMX
+            packaging_attrs = {
                 'class': 'select select-bordered w-full',
                 'hx-get': '/manufacturing/htmx/packaging-fields/',
                 'hx-target': '#packaging-fields-container',
-                'hx-trigger': 'change'
+                'hx-trigger': 'change',
+                'hx-swap': 'outerHTML'
             }
             # Add production_run_id for updates to preserve existing data
             if self.instance and self.instance.pk:
-                htmx_attrs['hx-include'] = '[name="production_line"], [name="production_run_id"]'
+                packaging_attrs['hx-include'] = '[name="production_line"], [name="production_run_id"]'
             
-            self.fields['production_line'].widget.attrs.update(htmx_attrs)
+            self.fields['production_line'].widget.attrs.update(packaging_attrs)
         
         # Product
         if 'product' in self.fields:
@@ -70,7 +72,7 @@ class ProductionRunForm(forms.ModelForm):
                 'hx-get': '/manufacturing/htmx/generate-batch-number/',
                 'hx-target': '#batch-number-container',
                 'hx-trigger': 'change',
-                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
+                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"], [name="production_line"]'
             })
         
         # Package Size
@@ -80,7 +82,7 @@ class ProductionRunForm(forms.ModelForm):
                 'hx-get': '/manufacturing/htmx/generate-batch-number/',
                 'hx-target': '#batch-number-container',
                 'hx-trigger': 'change',
-                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
+                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"], [name="production_line"]'
             })
         
         # Shift
@@ -90,7 +92,7 @@ class ProductionRunForm(forms.ModelForm):
                 'hx-get': '/manufacturing/htmx/generate-batch-number/',
                 'hx-target': '#batch-number-container',
                 'hx-trigger': 'change',
-                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"]'
+                'hx-include': '[name="product"], [name="package_size"], [name="shift"], [name="date"], [name="production_line"]'
             })
         
         # Production Start
@@ -154,10 +156,28 @@ class ProductionRunForm(forms.ModelForm):
                 'placeholder': '0'
             })
                 
-        # Filter querysets based on context
+        # Filter querysets and handle field states based on context
         if hasattr(self, 'instance') and self.instance.pk:
-            # For updates, keep all options
-            pass
+            # For updates, disable key identifying fields to maintain data integrity
+            readonly_fields = ['date', 'production_line', 'product', 'package_size', 'shift']
+            
+            for field_name in readonly_fields:
+                if field_name in self.fields:
+                    # Make field disabled and add visual styling
+                    self.fields[field_name].disabled = True
+                    self.fields[field_name].widget.attrs.update({
+                        'class': self.fields[field_name].widget.attrs.get('class', '') + ' cursor-not-allowed opacity-80 bg-base-200',
+                        'title': 'This field cannot be changed during updates for data integrity'
+                    })
+                    # Remove HTMX attributes from disabled fields
+                    if 'hx-get' in self.fields[field_name].widget.attrs:
+                        del self.fields[field_name].widget.attrs['hx-get']
+                    if 'hx-target' in self.fields[field_name].widget.attrs:
+                        del self.fields[field_name].widget.attrs['hx-target']
+                    if 'hx-trigger' in self.fields[field_name].widget.attrs:
+                        del self.fields[field_name].widget.attrs['hx-trigger']
+                    if 'hx-include' in self.fields[field_name].widget.attrs:
+                        del self.fields[field_name].widget.attrs['hx-include']
         else:
             # For new forms, filter active items only
             self.fields['production_line'].queryset = ProductionLine.objects.filter(is_active=True)
@@ -174,11 +194,13 @@ class ProductionRunForm(forms.ModelForm):
         shift = cleaned_data.get('shift')
         date = cleaned_data.get('date')
         
-        if all([product, package_size, shift, date]):
+        production_line = cleaned_data.get('production_line')
+        
+        if all([product, package_size, shift, date, production_line]):
             # Generate batch number if not editing existing instance
             if not (self.instance and self.instance.pk):
                 batch_number = ProductionRun.generate_batch_number(
-                    product, package_size, shift, date
+                    product, package_size, shift, date, production_line
                 )
                 cleaned_data['production_batch_number'] = batch_number
         

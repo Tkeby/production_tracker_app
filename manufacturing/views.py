@@ -42,7 +42,7 @@ class CreateProductionRunView(LoginRequiredMixin, CreateView):
         
         if self.request.POST:
             # Try to get production line from POST data
-            production_line_id = self.request.POST.get('production_line')
+            production_line_id = self.request.POST.get('production_line') 
             if production_line_id:
                 try:
                     production_line = ProductionLine.objects.get(id=production_line_id)
@@ -110,17 +110,7 @@ class UpdateProductionRunView(LoginRequiredMixin, UpdateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Debug: Print the object to console
-        if self.object:
-            print(f"DEBUG: Loading update form for ProductionRun {self.object.pk}")
-            print(f"  - Batch: {self.object.production_batch_number}")
-            print(f"  - Date: {self.object.date}")
-            print(f"  - Start: {self.object.production_start}")
-            print(f"  - End: {self.object.production_end}")
-            print(f"  - Product: {self.object.product}")
-            print(f"  - Line: {self.object.production_line}")
-            print(f"  - Package: {self.object.package_size}")
-        
+       
         # Get or create related instances for editing
         try:
             packaging_instance = self.object.packaging_material
@@ -363,7 +353,7 @@ def htmx_generate_batch_number(request):
     package_size_id = request.GET.get('package_size') 
     shift_id = request.GET.get('shift')
     date_str = request.GET.get('date')
-    
+    production_line_id = request.GET.get('production_line')
     batch_number = ""
     
     try:
@@ -371,7 +361,7 @@ def htmx_generate_batch_number(request):
         product = Product.objects.get(id=product_id) if product_id else None
         package_size = PackageSize.objects.get(id=package_size_id) if package_size_id else None
         shift = Shift.objects.get(id=shift_id) if shift_id else None
-        
+        production_line = ProductionLine.objects.get(id=production_line_id) if production_line_id else None
         # Parse date
         date_obj = None
         if date_str:
@@ -381,12 +371,12 @@ def htmx_generate_batch_number(request):
                 pass
         
         # Generate batch number if all components are available
-        if all([product, package_size, shift, date_obj]):
+        if all([product, package_size, shift, date_obj, production_line]):
             batch_number = ProductionRun.generate_batch_number(
-                product, package_size, shift, date_obj
+                product, package_size, shift, date_obj, production_line
             )
             
-    except (Product.DoesNotExist, PackageSize.DoesNotExist, Shift.DoesNotExist):
+    except (Product.DoesNotExist, PackageSize.DoesNotExist, Shift.DoesNotExist, ProductionLine.DoesNotExist):
         pass
     
     html = render_to_string('manufacturing/htmx/batch_number.html', {

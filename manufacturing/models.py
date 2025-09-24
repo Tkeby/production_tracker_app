@@ -116,10 +116,14 @@ class ProductionRun(models.Model):
     def __str__(self):
         return f"{self.production_batch_number} - {self.product.name}"
     
+    # def split_production_line_name(self):
+    #     """Split production line name and nerge with a -"""
+    #     return self.production_line.name.replace(' ', '-')
+
     @staticmethod
-    def generate_batch_number(product, package_size, shift, date):
+    def generate_batch_number(product, package_size, shift, date, production_line):
         """Generate production batch number from components"""
-        if not all([product, package_size, shift, date]):
+        if not all([product, package_size, shift, date, production_line]):
             return ""
         
         # Format: PRODUCT_CODE-SIZE-SHIFT_TYPE-YYYYMMDD
@@ -128,8 +132,9 @@ class ProductionRun(models.Model):
         shift_code = shift.name.replace('_SHIFT_', 'H') if hasattr(shift, 'name') else str(shift)
         size_str = package_size.size.replace(' ', '').upper() if hasattr(package_size, 'size') else str(package_size)
         product_code = product.product_code.upper() if hasattr(product, 'product_code') else str(product)
-        
-        batch_number = f"{product_code}-{size_str}-{shift_code}-{date_str}"
+        line_code = production_line.name.replace(' ', '-').upper() if hasattr(production_line, 'name') else str(production_line)
+
+        batch_number = f"{product_code}-{size_str}-{shift_code}-{date_str}-{line_code}"
         
         # Ensure uniqueness by adding sequence number if needed
         base_batch = batch_number
