@@ -86,7 +86,7 @@ class ProductionCalculationService:
         summary['avg_syrup_yield'] = weighted_avg_syrup_yield
         
         # Calculate additional metrics
-        total_planned_time = sum([run.planned_production_time_minutes for run in queryset])
+        total_planned_time = sum([Decimal(str(run.planned_production_time_minutes)) for run in queryset])
         summary.update({
             'total_planned_time_minutes': total_planned_time,
             'availability_percentage': ((total_planned_time - (summary['total_downtime'] or 0)) / 
@@ -341,7 +341,7 @@ class ProductionCalculationService:
                 date__range=[start_date, end_date]
             )
             
-            total_planned_time = sum([run.planned_production_time_minutes for run in runs])
+            total_planned_time = sum([Decimal(str(run.planned_production_time_minutes)) for run in runs])
             total_downtime = runs.aggregate(Sum('total_downtime_minutes'))['total_downtime_minutes__sum'] or 0
             
             if total_planned_time > 0:
