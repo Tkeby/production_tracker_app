@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -269,6 +269,122 @@ class CreateStopEventView(LoginRequiredMixin, CreateView):
         return reverse_lazy('manufacturing:production_run_detail', kwargs={'pk': self.production_run.pk})
 
 
+class UpdateStopEventView(LoginRequiredMixin, UpdateView):
+    model = StopEvent
+    form_class = StopEventForm
+    template_name = 'manufacturing/update_stop_event.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(StopEvent, pk=kwargs['pk'])
+        self.production_run = self.object.production_run
+        
+        # Check if user has permission to edit stop events for this production run
+        if self.production_run.shift_teamleader != request.user:
+            messages.error(request, "You can only edit stop events for your own production runs.")
+            return redirect('manufacturing:dashboard')
+        
+        # Prevent editing if production run is completed
+        if self.production_run.is_completed:
+            messages.error(request, "Cannot edit stop events for completed production runs.")
+            return redirect('manufacturing:production_run_detail', pk=self.production_run.pk)
+            
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['production_run'] = self.production_run
+        
+        # Filter machines to only show those from the production run's line
+        machines = Machine.objects.filter(
+            production_line=self.production_run.production_line,
+            is_active=True
+        )
+        context['machines'] = machines
+        
+        return context
+    
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        
+        # Filter machines to only show those from the production run's line
+        form.fields['machine'].queryset = Machine.objects.filter(
+            production_line=self.production_run.production_line,
+            is_active=True
+        )
+        
+        # Filter codes based on the selected machine
+        if self.object.machine:
+            form.fields['code'].queryset = DowntimeCode.objects.filter(
+                machine=self.object.machine
+            )
+        else:
+            form.fields['code'].queryset = DowntimeCode.objects.all()
+        
+        # Add HTMX attributes for dynamic filtering
+        form.fields['machine'].widget.attrs.update({
+            'hx-get': reverse_lazy('manufacturing:htmx_machine_codes'),
+            'hx-target': '#id_code',
+            'hx-trigger': 'change'
+        })
+        
+        return form
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Stop event updated successfully!')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('manufacturing:production_run_detail', kwargs={'pk': self.production_run.pk})
+
+
+class DeleteStopEventView(LoginRequiredMixin, DeleteView):
+    model = StopEvent
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(StopEvent, pk=kwargs['pk'])
+        self.production_run = self.object.production_run
+        
+        # Check if user has permission to delete stop events for this production run
+        if self.production_run.shift_teamleader != request.user:
+            messages.error(request, "You can only delete stop events for your own production runs.")
+            return redirect('manufacturing:dashboard')
+        
+        # Prevent deletion if production run is completed
+        if self.production_run.is_completed:
+            messages.error(request, "Cannot delete stop events for completed production runs.")
+            return redirect('manufacturing:production_run_detail', pk=self.production_run.pk)
+            
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get(self, request, *args, **kwargs):
+        # For GET requests, redirect directly to delete (skip confirmation template)
+        return self.delete(request, *args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        
+        # Store info for success message
+        machine_name = self.object.machine.machine_name
+        duration = self.object.duration_minutes
+        
+        self.object.delete()
+        messages.success(request, f'Stop event for {machine_name} ({duration} minutes) deleted successfully!')
+        
+        # Handle HTMX requests
+        if request.headers.get('HX-Request'):
+            # Return updated stop events section
+            html = render_to_string('manufacturing/htmx/recent_stop_events.html', {
+                'production_run': self.production_run,
+            })
+            response = HttpResponse(html)
+            response['HX-Trigger'] = 'updateStopEvents'
+            return response
+        
+        return HttpResponseRedirect(success_url)
+    
+    def get_success_url(self):
+        return reverse_lazy('manufacturing:production_run_detail', kwargs={'pk': self.production_run.pk})
 
 
 def htmx_product_packages(request):
