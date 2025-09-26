@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from datetime import date, timedelta
-from manufacturing.models import ProductionLine
+from manufacturing.models import ProductionLine, Machine
 
 
 class ReportFilterForm(forms.Form):
@@ -30,13 +30,32 @@ class ReportFilterForm(forms.Form):
         widget=forms.Select(attrs={'class': 'select select-bordered w-full'})
     )
     
+    machine = forms.ModelChoiceField(
+        queryset=Machine.objects.filter(is_active=True),
+        required=False,
+        empty_label="All Machines",
+        widget=forms.Select(attrs={'class': 'select select-bordered w-full'})
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Keep all machines initially - filtering will be handled by JavaScript/AJAX
+        self.fields['machine'].queryset = Machine.objects.filter(is_active=True)
+    
     def clean(self):
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')
+        production_line = cleaned_data.get('production_line')
+        machine = cleaned_data.get('machine')
         
         if start_date and end_date and start_date > end_date:
             raise forms.ValidationError("Start date must be before end date.")
+        
+        # Validate that machine belongs to selected production line
+        if production_line and machine and machine.production_line != production_line:
+            raise forms.ValidationError("Selected machine must belong to the selected production line.")
         
         return cleaned_data
 

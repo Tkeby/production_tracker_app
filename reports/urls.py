@@ -22,4 +22,5 @@ urlpatterns = [
     path('htmx/alerts/', views.production_alerts_htmx, name='alerts_htmx'),
     path('htmx/daily-summary/<str:date>/', views.daily_summary_htmx, name='daily_summary_htmx'),
     path('htmx/oee-chart/<str:start_date>/<str:end_date>/', views.oee_chart_htmx, name='oee_chart_htmx'),
+    path('htmx/machines-by-line/', views.machines_by_production_line_htmx, name='machines_by_line_htmx'),
 ]

@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% load static %}
-
+{% load humanize %}
 {% block title %}Production Efficiency Report{% endblock %}
 
 {% block subtitle %}
@@ -21,7 +21,7 @@
         <div class="card bg-base-100 shadow-xl mb-8">
             <div class="card-body">
                 <h3 class="card-title mb-4">Report Parameters</h3>
-                <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="form-control">
                         <label class="label">
                             <span class="label-text font-semibold">Start Date</span>
@@ -38,10 +38,33 @@
                         <label class="label">
                             <span class="label-text font-semibold">Production Line</span>
                         </label>
-                        {{ form.production_line }}
+                        <select 
+                            name="{{ form.production_line.name }}" 
+                            class="select select-bordered w-full"
+                            hx-get="{% url 'reports:machines_by_line_htmx' %}"
+                            hx-trigger="change"
+                            hx-target="#machine-select"
+                            hx-include="this"
+                        >
+                            <option value="">All Production Lines</option>
+                            {% for choice in form.production_line.field.queryset %}
+                            <option value="{{ choice.id }}" {% if form.production_line.value == choice.id|stringformat:"s" %}selected{% endif %}>{{ choice.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="form-control md:col-span-3">
-                        <button type="submit" class="btn btn-primary btn-lg">Generate Comprehensive Report</button>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Machine</span>
+                        </label>
+                        <select id="machine-select" name="{{ form.machine.name }}" class="select select-bordered w-full">
+                            <option value="">All Machines</option>
+                            {% for choice in form.machine.field.queryset %}
+                            <option value="{{ choice.id }}" {% if form.machine.value == choice.id|stringformat:"s" %}selected{% endif %}>{{ choice.machine_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-control lg:col-span-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Generate Report</button>
                     </div>
                 </form>
             </div>
@@ -57,7 +80,7 @@
                         <p class="text-lg opacity-90 mt-2">
                             {{ report.period.start_date|date:"M d, Y" }} - {{ report.period.end_date|date:"M d, Y" }}
                         </p>
-                        <p class="text-sm opacity-75">{{ report.period.production_line }}</p>
+                        <p class="text-sm opacity-75">{{ report.period.production_line }}{% if report.period.machine != 'All Machines' %} - {{ report.period.machine }}{% endif %}</p>
                     </div>
                     <div class="text-right">
                         <div class="btn btn-ghost btn-sm">📊 Full Analysis</div>
@@ -79,7 +102,7 @@
                         </div>
                         <div class="stat-title text-blue-800">Total Production</div>
                         <div class="stat-value text-2xl text-blue-600">
-                            {{ report.production_summary.total_production|floatformat:0|default:"0" }}
+                            {{ report.production_summary.total_production|floatformat:0|default:"0"|intcomma }}
                         </div>
                         <div class="stat-desc text-blue-700">Good Products (packs)</div>
                     </div>
@@ -92,7 +115,7 @@
                         </div>
                         <div class="stat-title text-green-800">Average OEE</div>
                         <div class="stat-value text-2xl text-green-600">
-                            {{ report.production_summary.avg_oee|floatformat:1|default:"0" }}%
+                            {{ report.production_summary.avg_oee|floatformat:1|default:"0"|intcomma }}%
                         </div>
                         <div class="stat-desc text-green-700">Overall Equipment Effectiveness</div>
                     </div>
@@ -105,7 +128,7 @@
                         </div>
                         <div class="stat-title text-orange-800">Total Downtime</div>
                         <div class="stat-value text-2xl text-orange-600">
-                            {{ report.production_summary.total_downtime|floatformat:0|default:"0" }}
+                            {{ report.production_summary.total_downtime|floatformat:0|default:"0"|intcomma }}
                         </div>
                         <div class="stat-desc text-orange-700">Minutes</div>
                     </div>
@@ -118,7 +141,7 @@
                         </div>
                         <div class="stat-title text-purple-800">Production Runs</div>
                         <div class="stat-value text-2xl text-purple-600">
-                            {{ report.production_summary.total_runs|default:"0" }}
+                            {{ report.production_summary.total_runs|default:"0"|intcomma }}
                         </div>
                         <div class="stat-desc text-purple-700">Total Runs</div>
                     </div>
@@ -176,7 +199,7 @@
                                 <tr>
                                     <td class="text-xs">{{ item.production_run__date|date:"M d" }}</td>
                                     <td class="text-center font-bold {% if item.avg_oee >= 85 %}text-green-600{% elif item.avg_oee >= 70 %}text-blue-600{% elif item.avg_oee >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
-                                        {{ item.avg_oee|floatformat:0|default:"0" }}%
+                                        {{ item.avg_oee|floatformat:0|default:"0"|intcomma }}%
                                     </td>
                                     <td class="text-center text-xs">{{ item.avg_availability|floatformat:0|default:"0" }}%</td>
                                     <td class="text-center text-xs">{{ item.avg_performance|floatformat:0|default:"0" }}%</td>
@@ -219,7 +242,7 @@
                                         </div>
                                     </td>
                                     <td class="font-bold {% if item.total_duration > 120 %}text-red-600{% elif item.total_duration > 60 %}text-orange-600{% else %}text-green-600{% endif %}">
-                                        {{ item.total_duration }} min
+                                        {{ item.total_duration|intcomma }} min
                                     </td>
                                     <td class="text-center">{{ item.occurrence_count }}</td>
                                 </tr>
@@ -248,13 +271,13 @@
                             {% if report.production_summary.avg_oee >= 70 %}
                             <li class="flex items-start gap-2">
                                 <span class="text-green-500">✓</span>
-                                <span class="text-sm">Good OEE performance ({{ report.production_summary.avg_oee|floatformat:1 }}%)</span>
+                                <span class="text-sm">Good OEE performance ({{ report.production_summary.avg_oee|floatformat:1|intcomma }}%)</span>
                             </li>
                             {% endif %}
                             {% if report.production_summary.total_runs > 10 %}
                             <li class="flex items-start gap-2">
                                 <span class="text-green-500">✓</span>
-                                <span class="text-sm">High production activity ({{ report.production_summary.total_runs }} runs)</span>
+                                <span class="text-sm">High production activity ({{ report.production_summary.total_runs|intcomma }} runs)</span>
                             </li>
                             {% endif %}
                             <li class="flex items-start gap-2">
@@ -270,7 +293,7 @@
                             {% if report.production_summary.avg_oee < 70 %}
                             <li class="flex items-start gap-2">
                                 <span class="text-orange-500">!</span>
-                                <span class="text-sm">Focus on improving OEE from {{ report.production_summary.avg_oee|floatformat:1 }}% to >70%</span>
+                                <span class="text-sm">Focus on improving OEE from {{ report.production_summary.avg_oee|floatformat:1|intcomma }}% to >70%</span>
                             </li>
                             {% endif %}
                             {% if report.downtime_analysis %}
@@ -345,7 +368,43 @@ const oeeAnalysisChart = new Chart(ctxOEE, {
             borderColor: colors.primary,
             backgroundColor: colors.primary + '20',
             tension: 0.1,
-            fill: true,
+            fill: false,
+            borderWidth: 3
+        }, {
+            label: 'Availability %',
+            data: [
+                {% for item in report.oee_analysis|slice:":10" %}
+                    {{ item.avg_availability|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            borderColor: colors.success,
+            backgroundColor: colors.success + '20',
+            tension: 0.1,
+            fill: false,
+            borderWidth: 2
+        }, {
+            label: 'Performance %',
+            data: [
+                {% for item in report.oee_analysis|slice:":10" %}
+                    {{ item.avg_performance|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            borderColor: colors.warning,
+            backgroundColor: colors.warning + '20',
+            tension: 0.1,
+            fill: false,
+            borderWidth: 2
+        }, {
+            label: 'Quality %',
+            data: [
+                {% for item in report.oee_analysis|slice:":10" %}
+                    {{ item.avg_quality|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            borderColor: colors.info,
+            backgroundColor: colors.info + '20',
+            tension: 0.1,
+            fill: false,
             borderWidth: 2
         }]
     },
@@ -365,8 +424,27 @@ const oeeAnalysisChart = new Chart(ctxOEE, {
         },
         plugins: {
             legend: {
-                display: false
+                display: true,
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    padding: 20
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                    }
+                }
             }
+        },
+        interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
         }
     }
 });
@@ -428,6 +506,7 @@ const downtimeAnalysisChart = new Chart(ctxDowntime, {
     }
 });
 {% endif %}
+
 {% endif %}
 </script>
 {% endblock %}

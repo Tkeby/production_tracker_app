@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional
-from manufacturing.models import ProductionRun, ProductionReport, ProductionLine,StopEvent
+from manufacturing.models import ProductionRun, ProductionReport, ProductionLine, StopEvent, Machine
 
 class ProductionCalculationService:
     """Service class for complex production calculations and analytics"""
@@ -186,7 +186,8 @@ class ProductionCalculationService:
     
     @staticmethod
     def get_top_downtime_reasons(start_date: date, end_date: date, 
-                                production_line: Optional[ProductionLine] = None, limit: int = 10) -> List[Dict]:
+                                production_line: Optional[ProductionLine] = None, limit: int = 10,
+                                machine: Optional[Machine] = None) -> List[Dict]:
         """Get top downtime reasons for a date range"""
         
        
@@ -197,6 +198,8 @@ class ProductionCalculationService:
         
         if production_line:
             queryset = queryset.filter(production_run__production_line=production_line)
+        if machine:
+            queryset = queryset.filter(machine=machine)
         
         downtime_analysis = queryset.values('code','code__reason', 'reason', 'machine__machine_name').annotate(
             total_duration=Sum('duration_minutes'),
@@ -207,7 +210,8 @@ class ProductionCalculationService:
     
     @staticmethod
     def calculate_oee_trend(start_date: date, end_date: date, 
-                          production_line: Optional[ProductionLine] = None) -> List[Dict]:
+                          production_line: Optional[ProductionLine] = None,
+                          machine: Optional[Machine] = None) -> List[Dict]:
         """Calculate OEE trend over a date range"""
         
         queryset = ProductionReport.objects.filter(
@@ -216,6 +220,9 @@ class ProductionCalculationService:
         
         if production_line:
             queryset = queryset.filter(production_run__production_line=production_line)
+        if machine:
+            # Filter by production runs that have stop events for this specific machine
+            queryset = queryset.filter(production_run__stop_events__machine=machine).distinct()
         
         # Group by date and calculate average OEE
         daily_oee = queryset.values('production_run__date').annotate(
@@ -230,7 +237,8 @@ class ProductionCalculationService:
     
     @staticmethod
     def generate_production_efficiency_report(start_date: date, end_date: date, 
-                                            production_line: Optional[ProductionLine] = None) -> Dict:
+                                            production_line: Optional[ProductionLine] = None,
+                                            machine: Optional[Machine] = None) -> Dict:
         """Generate comprehensive production efficiency report"""
         
         # Base metrics
@@ -238,18 +246,19 @@ class ProductionCalculationService:
             'period': {
                 'start_date': start_date,
                 'end_date': end_date,
-                'production_line': production_line.name if production_line else 'All Lines'
+                'production_line': production_line.name if production_line else 'All Lines',
+                'machine': machine.machine_name if machine else 'All Machines'
             }
         }
         
         # OEE Analysis
         base_data['oee_analysis'] = ProductionCalculationService.calculate_oee_trend(
-            start_date, end_date, production_line
+            start_date, end_date, production_line, machine
         )
         
         # Downtime Analysis
         base_data['downtime_analysis'] = ProductionCalculationService.get_top_downtime_reasons(
-            start_date, end_date, production_line
+            start_date, end_date, production_line, machine=machine
         )
         
         # Production Summary
@@ -258,6 +267,9 @@ class ProductionCalculationService:
         )
         if production_line:
             queryset = queryset.filter(production_line=production_line)
+        if machine:
+            # Filter production runs that have stop events for this specific machine
+            queryset = queryset.filter(stop_events__machine=machine).distinct()
         
         # Calculate weighted average syrup yield for production summary
         weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)

@@ -25,7 +25,7 @@
         <div class="card bg-base-100 shadow-xl mb-8">
             <div class="card-body">
                 <h3 class="card-title mb-4">Analysis Period</h3>
-                <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="form-control">
                         <label class="label">
                             <span class="label-text font-semibold">Start Date</span>
@@ -42,9 +42,32 @@
                         <label class="label">
                             <span class="label-text font-semibold">Production Line</span>
                         </label>
-                        {{ form.production_line }}
+                        <select 
+                            name="{{ form.production_line.name }}" 
+                            class="select select-bordered w-full"
+                            hx-get="{% url 'reports:machines_by_line_htmx' %}"
+                            hx-trigger="change"
+                            hx-target="#oee-machine-select"
+                            hx-include="this"
+                        >
+                            <option value="">All Production Lines</option>
+                            {% for choice in form.production_line.field.queryset %}
+                            <option value="{{ choice.id }}" {% if form.production_line.value == choice.id|stringformat:"s" %}selected{% endif %}>{{ choice.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="form-control md:col-span-3">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold">Machine</span>
+                        </label>
+                        <select id="oee-machine-select" name="{{ form.machine.name }}" class="select select-bordered w-full">
+                            <option value="">All Machines</option>
+                            {% for choice in form.machine.field.queryset %}
+                            <option value="{{ choice.id }}" {% if form.machine.value == choice.id|stringformat:"s" %}selected{% endif %}>{{ choice.machine_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-control lg:col-span-4">
                         <button type="submit" class="btn btn-primary">Analyze OEE Trends</button>
                     </div>
                 </form>
@@ -166,11 +189,12 @@
             <div class="card-body text-center py-16">
                 <div class="text-6xl mb-4">📈</div>
                 <h3 class="text-2xl font-bold mb-2">No OEE Data Available</h3>
-                <p class="text-gray-600 mb-6">Please select a date range and optionally a production line to analyze OEE trends.</p>
+                <p class="text-gray-600 mb-6">Please select a date range and optionally a production line and machine to analyze OEE trends.</p>
                 <div class="flex flex-wrap justify-center gap-2">
                     <span class="badge badge-outline">Select start date</span>
                     <span class="badge badge-outline">Select end date</span>
                     <span class="badge badge-outline">Choose production line (optional)</span>
+                    <span class="badge badge-outline">Choose machine (optional)</span>
                 </div>
             </div>
         </div>

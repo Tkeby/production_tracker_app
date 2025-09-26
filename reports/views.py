@@ -7,7 +7,7 @@ from django.db.models import Q
 from datetime import date, timedelta
 import json
 
-from manufacturing.models import ProductionLine, ProductionRun
+from manufacturing.models import ProductionLine, ProductionRun, Machine
 from .services import ProductionCalculationService
 from .forms import (
     ReportFilterForm, ShiftSummaryForm, DailySummaryForm, 
@@ -135,9 +135,10 @@ class ProductionEfficiencyReportView(TemplateView):
             start_date = form.cleaned_data['start_date']
             end_date = form.cleaned_data['end_date']
             production_line = form.cleaned_data['production_line']
+            machine = form.cleaned_data['machine']
             
             report = ProductionCalculationService.generate_production_efficiency_report(
-                start_date, end_date, production_line
+                start_date, end_date, production_line, machine
             )
             context['report'] = report
         
@@ -157,9 +158,10 @@ class OEETrendView(TemplateView):
             start_date = form.cleaned_data['start_date']
             end_date = form.cleaned_data['end_date']
             production_line = form.cleaned_data['production_line']
+            machine = form.cleaned_data['machine']
             
             trend_data = ProductionCalculationService.calculate_oee_trend(
-                start_date, end_date, production_line
+                start_date, end_date, production_line, machine
             )
             context['trend_data'] = trend_data
             context['start_date'] = start_date
@@ -365,3 +367,23 @@ def oee_chart_htmx(request, start_date, end_date):
     }
     
     return JsonResponse(chart_data)
+
+
+def machines_by_production_line_htmx(request):
+    """HTMX endpoint to get machine options for a specific production line"""
+    production_line_id = request.GET.get('production_line')
+    
+    machines = []
+    if production_line_id:
+        try:
+            production_line = ProductionLine.objects.get(id=production_line_id, is_active=True)
+            machines = Machine.objects.filter(
+                production_line=production_line, 
+                is_active=True
+            ).order_by('machine_name')
+        except (ProductionLine.DoesNotExist, ValueError):
+            pass
+    
+    return render(request, 'reports/htmx/machine_options.html', {
+        'machines': machines
+    })

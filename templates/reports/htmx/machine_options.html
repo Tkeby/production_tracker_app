@@ -1,0 +1,4 @@
+<option value="">All Machines</option>
+{% for machine in machines %}
+<option value="{{ machine.id }}">{{ machine.machine_name }}</option>
+{% endfor %}
