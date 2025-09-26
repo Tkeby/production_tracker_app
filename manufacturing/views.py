@@ -279,7 +279,7 @@ class UpdateStopEventView(LoginRequiredMixin, UpdateView):
         self.production_run = self.object.production_run
         
         # Check if user has permission to edit stop events for this production run
-        if self.production_run.shift_teamleader != request.user:
+        if (self.production_run.shift_teamleader != request.user) or not request.user.is_superuser:
             messages.error(request, "You can only edit stop events for your own production runs.")
             return redirect('manufacturing:dashboard')
         
