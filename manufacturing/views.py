@@ -22,7 +22,7 @@ class DashboardView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         return ProductionRun.objects.filter(
-            shift_teamleader=self.request.user,
+            # shift_teamleader=self.request.user,
             is_completed=False
         ).order_by('-date', '-production_start')
 
