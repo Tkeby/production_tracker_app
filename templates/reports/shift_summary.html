@@ -3,6 +3,10 @@
 {% load humanize %}
 {% block title %}Shift Summary Report{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block subtitle %}
 <p class="text-lg md:text-xl text-base-content/70 max-w-3xl">
     Production performance summary by shift
@@ -19,7 +23,7 @@
     <div class="max-w-7xl mx-auto">
         
         <!-- Filter Form -->
-        <div class="card bg-base-100 shadow-xl mb-8">
+        <div class="card bg-base-100 shadow-xl mb-6">
             <div class="card-body">
                 <h3 class="card-title mb-4">Filter Options</h3>
                 <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -47,16 +51,75 @@
                 </form>
             </div>
         </div>
-
+ 
         {% if summary %}
         <!-- Summary Metrics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <div class="card bg-blue-50 border border-blue-200">
-                <div class="card-body text-center flex flex-col justify-center">
-                    <div class="text-3xl font-bold text-blue-600">
-                        {{ summary.total_production|floatformat:0|intcomma }}
-                    </div>
-                    <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
+                <div class="card-body">
+                    {% if summary.production_by_line %}
+                        <!-- Production breakdown by line when "All Lines" selected -->
+                        <div class="text-center mb-3">
+                            <div class="text-sm text-blue-800 font-semibold">Production by Line (packs)</div>
+                        </div>
+                        <!-- Horizontal layout for production lines with colors -->
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            {% for line_data in summary.production_by_line %}
+                                {% if line_data.production_line__name == 'Line A' %}
+                                    <div class="bg-emerald-100 border border-emerald-300 rounded-lg px-2 py-2">
+                                        <div class="text-center">
+                                            <div class="text-lg font-bold text-emerald-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                            <div class="text-xs font-medium text-emerald-600">{{ line_data.production_line__name }}</div>
+                                        </div>
+                                    </div>
+                                {% elif line_data.production_line__name == 'Line B' %}
+                                    <div class="bg-violet-100 border border-violet-300 rounded-lg px-2 py-2">
+                                        <div class="text-center">
+                                            <div class="text-lg font-bold text-violet-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                            <div class="text-xs font-medium text-violet-600">{{ line_data.production_line__name }}</div>
+                                        </div>
+                                    </div>
+                                {% elif line_data.production_line__name == 'Line C' %}
+                                    <div class="bg-amber-100 border border-amber-300 rounded-lg px-2 py-2">
+                                        <div class="text-center">
+                                            <div class="text-lg font-bold text-amber-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                            <div class="text-xs font-medium text-amber-600">{{ line_data.production_line__name }}</div>
+                                        </div>
+                                    </div>
+                                {% elif line_data.production_line__name == 'Line CAN' %}
+                                    <div class="bg-rose-100 border border-rose-300 rounded-lg px-2 py-2">
+                                        <div class="text-center">
+                                            <div class="text-lg font-bold text-rose-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                            <div class="text-xs font-medium text-rose-600">{{ line_data.production_line__name }}</div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <!-- Fallback for other lines -->
+                                    <div class="bg-gray-100 border border-gray-300 rounded-lg px-2 py-2">
+                                        <div class="text-center">
+                                            <div class="text-lg font-bold text-gray-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                            <div class="text-xs font-medium text-gray-600">{{ line_data.production_line__name }}</div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="pt-3 border-t border-blue-200">
+                            <div class="text-center">
+                                <div class="text-sm font-semibold text-blue-800">Total: 
+                                    <span class="text-xl font-bold text-blue-600">{{ summary.total_production|floatformat:0|intcomma }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Single line production display -->
+                        <div class="text-center flex flex-col justify-center">
+                            <div class="text-3xl font-bold text-blue-600">
+                                {{ summary.total_production|floatformat:0|intcomma }}
+                            </div>
+                            <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             <div class="card bg-green-50 border border-green-200">

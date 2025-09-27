@@ -4,6 +4,11 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional
 from manufacturing.models import ProductionRun, ProductionReport, ProductionLine, StopEvent, Machine
+from .helpers import (
+    filter_production_runs, 
+    build_production_summary,
+    aggregate_basic_totals
+)
 
 class ProductionCalculationService:
     """Service class for complex production calculations and analytics"""
@@ -42,57 +47,17 @@ class ProductionCalculationService:
                                shift_type: Optional[str] = None) -> Dict:
         """Calculate summary metrics for a specific shift"""
         
-        queryset = ProductionRun.objects.filter(date=shift_date)
-        
-        if production_line:
-            queryset = queryset.filter(production_line=production_line)
-        
-        if shift_type:
-            queryset = queryset.filter(shift__name=shift_type)
+        # Use helper to filter production runs
+        queryset = filter_production_runs(shift_date, production_line, shift_type)
         
         # Calculate weighted avg syrup yield based on production pack proportion for each run
         weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
-
-        # Aggregate production-run level fields first to avoid duplication from joins
-        run_totals = queryset.aggregate(
-            total_production=Sum('good_products_pack'),
-            total_downtime=Sum('total_downtime_minutes'),
-            avg_oee=Avg('report__oee'),
-            production_runs_count=Count('id'),
-            total_syrup=Sum('final_syrup_volume')
-        )
-
-        # Aggregate planned/unplanned downtime from StopEvent to prevent multiplying rows
-        stop_events_qs = StopEvent.objects.filter(production_run__in=queryset)
-        stop_agg = stop_events_qs.aggregate(
-            total_unplanned_downtime=Sum(
-                Case(
-                    When(is_planned=False, then='duration_minutes'),
-                    default=0
-                )
-            ),
-            total_planned_downtime=Sum(
-                Case(
-                    When(is_planned=True, then='duration_minutes'),
-                    default=0
-                )
-            )
-        )
-
-        # Merge both summaries
-        summary = {**run_totals, **stop_agg}
+        
+        # Use helper to build comprehensive production summary
+        summary = build_production_summary(queryset, production_line)
         
         # Add weighted average syrup yield to summary
         summary['avg_syrup_yield'] = weighted_avg_syrup_yield
-        
-        # Calculate additional metrics
-        total_planned_time = sum([Decimal(str(run.planned_production_time_minutes)) for run in queryset])
-        summary.update({
-            'total_planned_time_minutes': total_planned_time,
-            'availability_percentage': ((total_planned_time - (summary['total_downtime'] or 0)) / 
-                                      total_planned_time * 100) if total_planned_time > 0 else 0,
-            'runs': queryset.select_related('product', 'package_size', 'shift_teamleader')
-        })
         
         return summary
     
