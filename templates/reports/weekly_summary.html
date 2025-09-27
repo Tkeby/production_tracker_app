@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% load static %}
-
+{% load humanize %}
 {% block title %}Weekly Summary Report{% endblock %}
 
 {% block subtitle %}
@@ -21,7 +21,7 @@
        
 
         <!-- Filter Form -->
-        <div class="card bg-base-100 shadow-xl mb-8">
+        <div class="card bg-base-100 shadow-xl mb-6">
             <div class="card-body">
                 <h3 class="card-title mb-4">Filter Options</h3>
                 <form method="get" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -49,7 +49,7 @@
 
         {% if summary %}
         <!-- Week Overview -->
-        <div class="card bg-gradient-to-r from-green-500 to-green-600 text-white shadow-xl mb-8">
+        <div class="card bg-gradient-to-r from-green-500 to-green-600 text-white shadow-xl mb-6">
             <div class="card-body">
                 <h3 class="text-2xl font-bold mb-4">
                     Week of {{ summary.week_start|date:"M d" }} - {{ summary.week_end|date:"M d, Y" }}
@@ -59,19 +59,19 @@
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="text-center">
-                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_production|floatformat:0|default:"0" }}</div>
+                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_production|floatformat:0|default:"0"|intcomma }}</div>
                         <div class="text-sm opacity-90 font-semibold">Total Production (packs)</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-4xl font-bold">{{ summary.weekly_totals.avg_oee|floatformat:1|default:"0" }}%</div>
+                        <div class="text-4xl font-bold">{{ summary.weekly_totals.avg_oee|floatformat:1|default:"0"|intcomma }}%</div>
                         <div class="text-sm opacity-90 font-semibold">Average OEE</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_downtime|floatformat:0|default:"0" }}</div>
+                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_downtime|floatformat:0|default:"0"|intcomma }}</div>
                         <div class="text-sm opacity-90 font-semibold">Total Downtime (min)</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_runs|default:"0" }}</div>
+                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_runs|default:"0"|intcomma }}</div>
                         <div class="text-sm opacity-90 font-semibold">Production Runs</div>
                     </div>
                 </div>
@@ -79,7 +79,7 @@
         </div>
 
         <!-- Daily Breakdown -->
-        <div class="card bg-base-100 shadow-xl mb-8">
+        <div class="card bg-base-100 shadow-xl mb-6">
             <div class="card-body">
                 <h3 class="card-title text-xl mb-6">Daily Breakdown</h3>
                 <div class="grid grid-cols-1 lg:grid-cols-7 gap-4">
@@ -95,21 +95,21 @@
                                 <div class="space-y-2">
                                     <div>
                                         <div class="text-lg font-bold {% if daily_data.daily_totals.total_production %}text-blue-600{% else %}text-gray-400{% endif %}">
-                                            {{ daily_data.daily_totals.total_production|floatformat:0|default:"0" }}
+                                            {{ daily_data.daily_totals.total_production|floatformat:0|default:"0"|intcomma }}
                                         </div>
                                         <div class="text-xs text-gray-500">Packs</div>
                                     </div>
                                     
                                     <div>
                                         <div class="text-sm font-semibold {% if daily_data.daily_totals.avg_oee %}text-green-600{% else %}text-gray-400{% endif %}">
-                                            {{ daily_data.daily_totals.avg_oee|floatformat:1|default:"0" }}%
+                                            {{ daily_data.daily_totals.avg_oee|floatformat:1|default:"0"|intcomma }}%
                                         </div>
                                         <div class="text-xs text-gray-500">OEE</div>
                                     </div>
                                     
                                     <div>
                                         <div class="text-sm {% if daily_data.daily_totals.total_downtime %}text-orange-600{% else %}text-gray-400{% endif %}">
-                                            {{ daily_data.daily_totals.total_downtime|floatformat:0|default:"0" }}
+                                            {{ daily_data.daily_totals.total_downtime|floatformat:0|default:"0"|intcomma }}
                                         </div>
                                         <div class="text-xs text-gray-500">Downtime (min)</div>
                                     </div>
