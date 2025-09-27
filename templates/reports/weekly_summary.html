@@ -51,28 +51,65 @@
         <!-- Week Overview -->
         <div class="card bg-gradient-to-r from-green-500 to-green-600 text-white shadow-xl mb-6">
             <div class="card-body">
-                <h3 class="text-2xl font-bold mb-4">
-                    Week of {{ summary.week_start|date:"M d" }} - {{ summary.week_end|date:"M d, Y" }}
-                    {% if summary.production_line %}
-                        ({{ summary.production_line.name }})
-                    {% endif %}
-                </h3>
+                <div class="flex justify-center">
+                    <h3 class="text-2xl font-bold mb-4">
+                        Week of {{ summary.week_start|date:"M d" }} - {{ summary.week_end|date:"M d, Y" }}
+                        {% if summary.production_line %}
+                            ({{ summary.production_line.name }})
+                        {% endif %}
+                    </h3>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="text-center">
-                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_production|floatformat:0|default:"0"|intcomma }}</div>
-                        <div class="text-sm opacity-90 font-semibold">Total Production (packs)</div>
+                    <!-- Total Production KPI -->
+                    <div class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20 shadow-lg">
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                            </div>
+                            <div class="text-4xl font-bold mb-2">{{ summary.weekly_totals.total_production|floatformat:0|default:"0"|intcomma }}</div>
+                            <div class="text-sm opacity-90 font-semibold">Total Production (packs)</div>
+                        </div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-4xl font-bold">{{ summary.weekly_totals.avg_oee|floatformat:1|default:"0"|intcomma }}%</div>
-                        <div class="text-sm opacity-90 font-semibold">Average OEE</div>
+
+                    <!-- Average OEE KPI -->
+                    <div class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20 shadow-lg">
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-4xl font-bold mb-2">{{ summary.weekly_totals.avg_oee|floatformat:1|default:"0"|intcomma }}%</div>
+                            <div class="text-sm opacity-90 font-semibold">Average OEE</div>
+                        </div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_downtime|floatformat:0|default:"0"|intcomma }}</div>
-                        <div class="text-sm opacity-90 font-semibold">Total Downtime (min)</div>
+
+                    <!-- Total Downtime KPI -->
+                    <div class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20 shadow-lg">
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-4xl font-bold mb-2">{{ summary.weekly_totals.total_downtime|floatformat:0|default:"0"|intcomma }}</div>
+                            <div class="text-sm opacity-90 font-semibold">Total Downtime (min)</div>
+                        </div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-4xl font-bold">{{ summary.weekly_totals.total_runs|default:"0"|intcomma }}</div>
-                        <div class="text-sm opacity-90 font-semibold">Production Runs</div>
+
+                    <!-- Production Runs KPI -->
+                    <div class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20 shadow-lg">
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
+                            </div>
+                            <div class="text-4xl font-bold mb-2">{{ summary.weekly_totals.total_runs|default:"0"|intcomma }}</div>
+                            <div class="text-sm opacity-90 font-semibold">Production Runs</div>
+                        </div>
                     </div>
                 </div>
             </div>
