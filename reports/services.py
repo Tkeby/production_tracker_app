@@ -1,4 +1,5 @@
-from django.db.models import Sum, Avg, Count, Q, Case, When
+from django.db.models import Sum, Avg, Count, Q, Case, When, F, Value, FloatField
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 from decimal import Decimal
@@ -89,6 +90,11 @@ class ProductionCalculationService:
         # Calculate weighted average syrup yield for daily totals
         weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
 
+        # Calculate total production time minutes for daily totals
+        total_production_time_minutes_value = 0
+        for run in queryset.select_related('shift'):
+            total_production_time_minutes_value += run.planned_production_time_minutes
+
         # Daily totals
         daily_totals = queryset.aggregate(
             total_production=Sum('good_products_pack'),
@@ -97,8 +103,9 @@ class ProductionCalculationService:
             total_runs=Count('id')
         )
         
-        # Add weighted average syrup yield
+        # Add weighted average syrup yield and production time minutes
         daily_totals['avg_syrup_yield'] = weighted_avg_syrup_yield
+        daily_totals['total_production_time_minutes'] = total_production_time_minutes_value
         
         return {
             'date': target_date,
@@ -130,6 +137,14 @@ class ProductionCalculationService:
         # Calculate weighted average syrup yield for weekly totals
         weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
 
+        # Calculate total operational minutes by iterating through runs
+        # Using the same logic as the planned_production_time_minutes property
+        total_production_time_minutes_value = 0
+        for run in queryset.select_related('shift'):
+            total_production_time_minutes_value += run.planned_production_time_minutes
+        
+        total_production_time_minutes = total_production_time_minutes_value
+
         # Weekly totals
         weekly_totals = queryset.aggregate(
             total_production=Sum('good_products_pack'),
@@ -140,7 +155,7 @@ class ProductionCalculationService:
         
         # Add weighted average syrup yield
         weekly_totals['avg_syrup_yield'] = weighted_avg_syrup_yield
-        
+        weekly_totals['total_production_time_minutes'] = total_production_time_minutes
         return {
             'week_start': week_start_date,
             'week_end': week_end_date,
@@ -318,6 +333,7 @@ class ProductionCalculationService:
                 date__range=[start_date, end_date]
             )
             
+            # Calculate total planned time by iterating through runs and using the property
             total_planned_time = sum([Decimal(str(run.planned_production_time_minutes)) for run in runs])
             total_downtime = runs.aggregate(Sum('total_downtime_minutes'))['total_downtime_minutes__sum'] or 0
             
