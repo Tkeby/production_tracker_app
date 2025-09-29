@@ -13,6 +13,12 @@ urlpatterns = [
     path('reports/', include('reports.urls')),    
 ]
 
+# Custom error handlers
+handler404 = 'core.error_views.custom_404_view'
+handler500 = 'core.error_views.custom_500_view'
+handler403 = 'core.error_views.custom_403_view'
+handler400 = 'core.error_views.custom_400_view'
+
 
 if settings.DEBUG:
     # Include django_browser_reload URLs only in DEBUG mode
