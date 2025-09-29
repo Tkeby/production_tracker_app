@@ -4,6 +4,7 @@ from django.utils import timezone
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional
+import json
 from manufacturing.models import ProductionRun, ProductionReport, ProductionLine, StopEvent, Machine
 from .helpers import (
     filter_production_runs, 
@@ -398,4 +399,82 @@ class ProductionCalculationService:
             'cumulative_percentages': cumulative_percentages,
             'total_duration': total_duration,
             'pareto_80_index': next((i for i, pct in enumerate(cumulative_percentages) if pct >= 80), None)
+        }
+
+    @staticmethod
+    def calculate_product_trend(start_date: date, end_date: date, 
+                              production_line: Optional[ProductionLine] = None) -> Dict:
+        """Calculate production trend by product over a date range"""
+        
+        queryset = ProductionRun.objects.filter(
+            date__range=[start_date, end_date]
+        )
+        
+        if production_line:
+            queryset = queryset.filter(production_line=production_line)
+        
+        # Group by product and date to get daily production by product
+        product_trend_data = queryset.values(
+            'date', 'product__name', 'product__product_code'
+        ).annotate(
+            total_production=Sum('good_products_pack')
+        ).order_by('date', 'product__name')
+        
+        # Organize data for chart
+        products = {}
+        dates = set()
+        
+        for entry in product_trend_data:
+            product_name = entry['product__name']
+            product_date = entry['date']
+            production = entry['total_production'] or 0
+            
+            dates.add(product_date)
+            
+            if product_name not in products:
+                products[product_name] = {}
+            
+            products[product_name][product_date] = production
+        
+        # Sort dates
+        sorted_dates = sorted(list(dates))
+        
+        # Fill missing dates with 0 for each product
+        for product_name in products:
+            for date_entry in sorted_dates:
+                if date_entry not in products[product_name]:
+                    products[product_name][date_entry] = 0
+        
+        # Format data for Chart.js
+        chart_data = {
+            'labels': [date.strftime('%m/%d') for date in sorted_dates],
+            'datasets': []
+        }
+        
+        
+        # Define color palette for products
+        colors = [
+            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+            '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
+        ]
+        
+        for idx, (product_name, product_data) in enumerate(products.items()):
+            color = colors[idx % len(colors)]
+            dataset = {
+                'label': product_name,
+                'data': [product_data[date] for date in sorted_dates],
+                'borderColor': color,
+                'backgroundColor': color + '80',  # More opacity for bars
+                'borderWidth': 1,
+                'borderRadius': 4,
+                'borderSkipped': False,
+            }
+            chart_data['datasets'].append(dataset)
+        
+        return {
+            'chart_data': chart_data,
+            'chart_data_json': json.dumps(chart_data),  # Pre-serialized JSON
+            'products': products,
+            'date_range': sorted_dates,
+            'total_products': len(products)
         }

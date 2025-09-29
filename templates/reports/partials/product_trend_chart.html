@@ -1,0 +1,199 @@
+{% comment %}
+Reusable Product Trend Chart Component
+
+Usage:
+  {% include 'reports/partials/product_trend_chart.html' with product_trend=product_trend_data chart_id='productTrendChart' chart_title='Production Trend by Product' %}
+
+Required context:
+  - product_trend: Dictionary containing chart data from ProductionCalculationService.calculate_product_trend()
+  - chart_id: Unique ID for the chart canvas element
+  - chart_title: Title to display for the chart
+
+Optional context:
+  - chart_height: Height class for the chart container (default: 'h-64')
+  - show_legend: Whether to show chart legend (default: True)
+{% endcomment %}
+
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <h3 class="card-title text-xl mb-4">{{ chart_title|default:"Production Trend by Product" }}</h3>
+        
+        
+        {% if product_trend and product_trend.total_products > 0 %}
+            <!-- Chart Container -->
+            <div class="{{ chart_height|default:'h-64' }}">
+                <canvas id="{{ chart_id|default:'productTrendChart' }}"></canvas>
+            </div>
+            
+            <!-- Product Summary -->
+            <div class="mt-4 pt-4 border-t border-base-200">
+                <div class="flex flex-wrap gap-2 justify-center">
+                    <div class="badge badge-outline">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                        {{ product_trend.total_products }} Product{{ product_trend.total_products|pluralize }}
+                    </div>
+                    <div class="badge badge-outline">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        {{ product_trend.date_range|length }} Day{{ product_trend.date_range|length|pluralize }}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- No Data State -->
+            <div class="text-center py-12">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <h4 class="text-lg font-semibold text-gray-600 mb-2">No Production Data</h4>
+                <p class="text-gray-500">No product trend data available for the selected date range.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Chart.js Script -->
+<script>
+// Product Trend Chart - {{ chart_id|default:'productTrendChart' }}
+{% if product_trend and product_trend.total_products > 0 %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded for {{ chart_id|default:"productTrendChart" }}!');
+        return;
+    }
+    
+    const canvasElement = document.getElementById('{{ chart_id|default:"productTrendChart" }}');
+    if (!canvasElement) {
+        console.error('Canvas element not found: {{ chart_id|default:"productTrendChart" }}');
+        return;
+    }
+    
+    const ctx = canvasElement.getContext('2d');
+    const chartData = JSON.parse('{{ product_trend.chart_data_json|escapejs }}');
+    
+    const productTrendChart = new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        plugins: [{
+            id: 'barValueLabels',
+            afterDatasetsDraw: function(chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillStyle = '#374151'; // Gray-700 color
+                ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    if (!meta.hidden) {
+                        meta.data.forEach((bar, index) => {
+                            const value = dataset.data[index];
+                            if (value > 0) { // Only show label if value is greater than 0
+                                const x = bar.x;
+                                let y = bar.y - 8; // Position above the bar
+                                
+                                // For very small bars, position label above chart area
+                                const barHeight = bar.base - bar.y;
+                                if (barHeight < 25) {
+                                    y = bar.y - 15;
+                                }
+                                
+                                // Add text shadow/outline for better readability
+                                ctx.strokeStyle = 'white';
+                                ctx.lineWidth = 3;
+                                ctx.strokeText(value.toLocaleString(), x, y);
+                                ctx.fillText(value.toLocaleString(), x, y);
+                            }
+                        });
+                    }
+                });
+                ctx.restore();
+            }
+        }],
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 25,
+                    right: 10,
+                    bottom: 10,
+                    left: 10
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Production (Packs)'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: {% if show_legend == False %}false{% else %}true{% endif %},
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' packs';
+                        },
+                        footer: function(tooltipItems) {
+                            let total = tooltipItems.reduce((sum, item) => sum + item.parsed.y, 0);
+                            return 'Total: ' + total.toLocaleString() + ' packs';
+                        }
+                    }
+                }
+            },
+            hover: {
+                mode: 'index',
+                intersect: false
+            },
+            elements: {
+                bar: {
+                    borderRadius: 4,
+                    borderSkipped: false
+                }
+            }
+        }
+    });
+});
+{% endif %}
+</script>

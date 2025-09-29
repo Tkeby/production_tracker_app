@@ -210,8 +210,12 @@
             </div>
         </div>
 
-        <!-- Weekly Trends Chart -->
-        <div class="card bg-base-100 shadow-xl">
+
+         <!-- Product Trend Chart -->
+         {% include 'reports/partials/product_trend_chart.html' with product_trend=product_trend chart_id='weeklyProductTrendChart' chart_title='Weekly Production by Product' %}
+       
+         <!-- Weekly Trends Chart -->
+        <div class="card bg-base-100 shadow-xl my-6">
             <div class="card-body">
                 <h3 class="card-title text-xl mb-4">Weekly Production Trend</h3>
                 <div class="h-64">
@@ -219,6 +223,8 @@
                 </div>
             </div>
         </div>
+
+       
 
         {% else %}
         <!-- No Data State -->

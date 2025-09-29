@@ -97,6 +97,13 @@ class DailySummaryView(ReportsPermissionMixin, TemplateView):
                 target_date, production_line
             )
             context['summary'] = summary
+            
+            # Add product trend for the last 7 days ending on target_date
+            start_date = target_date - timedelta(days=6)
+            product_trend = ProductionCalculationService.calculate_product_trend(
+                start_date, target_date, production_line
+            )
+            context['product_trend'] = product_trend
         
         return context
 
@@ -118,6 +125,13 @@ class WeeklySummaryView(ReportsPermissionMixin, TemplateView):
                 week_start_date, production_line
             )
             context['summary'] = summary
+            
+            # Calculate product trend for the week
+            week_end_date = week_start_date + timedelta(days=6)
+            product_trend = ProductionCalculationService.calculate_product_trend(
+                week_start_date, week_end_date, production_line
+            )
+            context['product_trend'] = product_trend
         
         return context
 
