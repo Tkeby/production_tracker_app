@@ -15,7 +15,7 @@ urlpatterns = [
     path('production-run/<int:production_run_pk>/add-stop-event/', views.CreateStopEventView.as_view(), name='create_stop_event'),
     path('stop-event/<int:pk>/edit/', views.UpdateStopEventView.as_view(), name='update_stop_event'),
     path('stop-event/<int:pk>/delete/', views.DeleteStopEventView.as_view(), name='delete_stop_event'),
-    path('reports/', views.ReportsListView.as_view(), name='reports_list'),
+    # path('reports/', views.ReportsListView.as_view(), name='reports_list'),
     
     # HTMX endpoints
     path('htmx/product-packages/', views.htmx_product_packages, name='htmx_product_packages'),
