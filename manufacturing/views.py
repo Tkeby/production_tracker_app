@@ -228,7 +228,7 @@ class CreateStopEventView(LoginRequiredMixin, CreateView):
         self.production_run = get_object_or_404(ProductionRun, pk=kwargs['production_run_pk'])
         
         # Check if user has permission to add stop events to this production run
-        if self.production_run.shift_teamleader != request.user:
+        if self.production_run.shift_teamleader != request.user and not request.user.is_superuser:
             messages.error(request, "You can only add stop events to your own production runs.")
             return redirect('manufacturing:dashboard')
             
@@ -353,7 +353,7 @@ class DeleteStopEventView(LoginRequiredMixin, DeleteView):
         self.production_run = self.object.production_run
         
         # Check if user has permission to delete stop events for this production run
-        if self.production_run.shift_teamleader != request.user:
+        if self.production_run.shift_teamleader != request.user and not request.user.is_superuser:
             messages.error(request, "You can only delete stop events for your own production runs.")
             return redirect('manufacturing:dashboard')
         
@@ -514,7 +514,7 @@ def htmx_create_stop_event(request, production_run_pk):
     production_run = get_object_or_404(ProductionRun, pk=production_run_pk)
     
     # Check permissions
-    if production_run.shift_teamleader != request.user:
+    if production_run.shift_teamleader != request.user and not request.user.is_superuser:
         return HttpResponse(
             '<div class="alert alert-error"><span>You can only add stop events to your own production runs.</span></div>',
             status=403
