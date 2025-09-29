@@ -9,16 +9,17 @@ import json
 
 from manufacturing.models import ProductionLine, ProductionRun, Machine
 from .services import ProductionCalculationService
+from .mixins import ReportsPermissionMixin, DetailedReportsPermissionMixin
 from .forms import (
     ReportFilterForm, ShiftSummaryForm, DailySummaryForm, 
     WeeklySummaryForm, DowntimeAnalysisForm, MachineUtilizationForm
 )
 
 
-class ReportsDashboardView(TemplateView):
-    """Main reports dashboard with key metrics and alerts"""
+class ReportsDashboardView(ReportsPermissionMixin, TemplateView):
+    """Main reports dashboard with key metrics and alerts - Uses Guardian object-level permissions"""
     template_name = 'reports/dashboard.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
@@ -55,10 +56,9 @@ class ReportsDashboardView(TemplateView):
         return context
 
 
-class ShiftSummaryView(TemplateView):
+class ShiftSummaryView(ReportsPermissionMixin, TemplateView):
     """Shift summary report view"""
     template_name = 'reports/shift_summary.html'
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         form = ShiftSummaryForm(self.request.GET or None)
@@ -80,7 +80,7 @@ class ShiftSummaryView(TemplateView):
         return context
 
 
-class DailySummaryView(TemplateView):
+class DailySummaryView(ReportsPermissionMixin, TemplateView):
     """Daily summary report view"""
     template_name = 'reports/daily_summary.html'
     
@@ -101,7 +101,7 @@ class DailySummaryView(TemplateView):
         return context
 
 
-class WeeklySummaryView(TemplateView):
+class WeeklySummaryView(ReportsPermissionMixin, TemplateView):
     """Weekly summary report view"""
     template_name = 'reports/weekly_summary.html'
     
@@ -122,8 +122,8 @@ class WeeklySummaryView(TemplateView):
         return context
 
 
-class ProductionEfficiencyReportView(TemplateView):
-    """Comprehensive production efficiency report"""
+class ProductionEfficiencyReportView(DetailedReportsPermissionMixin, TemplateView):
+    """Comprehensive production efficiency report - Requires detailed reports permission"""
     template_name = 'reports/efficiency_report.html'
     
     def get_context_data(self, **kwargs):
@@ -145,8 +145,8 @@ class ProductionEfficiencyReportView(TemplateView):
         return context
 
 
-class OEETrendView(TemplateView):
-    """OEE trend analysis view"""
+class OEETrendView(DetailedReportsPermissionMixin, TemplateView):
+    """OEE trend analysis view - Requires detailed reports permission"""
     template_name = 'reports/oee_trend.html'
     
     def get_context_data(self, **kwargs):
@@ -170,8 +170,8 @@ class OEETrendView(TemplateView):
         return context
 
 
-class DowntimeAnalysisView(TemplateView):
-    """Downtime analysis report view"""
+class DowntimeAnalysisView(DetailedReportsPermissionMixin, TemplateView):
+    """Downtime analysis report view - Requires detailed reports permission"""
     template_name = 'reports/downtime_analysis.html'
     
     def get_context_data(self, **kwargs):
@@ -223,8 +223,8 @@ class DowntimeAnalysisView(TemplateView):
         return context
 
 
-class MachineUtilizationView(TemplateView):
-    """Machine utilization report view"""
+class MachineUtilizationView(DetailedReportsPermissionMixin, TemplateView):
+    """Machine utilization report view - Requires detailed reports permission"""
     template_name = 'reports/machine_utilization.html'
     
     def get_context_data(self, **kwargs):

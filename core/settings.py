@@ -56,6 +56,7 @@ THIRD_PARTY_APPS = [
     'theme',
     "django_htmx",
     'widget_tweaks',
+    'guardian',
 ]
 
 LOCAL_APPS = [
@@ -84,6 +85,7 @@ MIDDLEWARE = [
     # django-allauth middleware
     "allauth.account.middleware.AccountMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
+    
 ]
 
 if DEBUG:
@@ -140,7 +142,9 @@ AUTHENTICATION_BACKENDS = [
 
     # `allauth` specific authentication methods, such as login by email
     'allauth.account.auth_backends.AuthenticationBackend',
-    
+
+    # `guardian` specific authentication methods
+    'guardian.backends.ObjectPermissionBackend',
 ]
 
 # Allauth settings

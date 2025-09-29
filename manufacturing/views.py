@@ -201,7 +201,7 @@ class FinalizeProductionRunView(LoginRequiredMixin, View):
     def post(self, request, pk):
         production_run = get_object_or_404(ProductionRun, pk=pk)
         
-        if production_run.shift_teamleader != request.user:
+        if production_run.shift_teamleader != request.user and not request.user.is_superuser:
             messages.error(request, "You can only finalize your own production runs.")
             return redirect('manufacturing:dashboard')
         
