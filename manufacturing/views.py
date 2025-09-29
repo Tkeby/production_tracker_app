@@ -21,10 +21,18 @@ class DashboardView(LoginRequiredMixin, ListView):
     context_object_name = 'production_runs'
     
     def get_queryset(self):
-        return ProductionRun.objects.filter(
-            # shift_teamleader=self.request.user,
+        today = timezone.now().date()
+        today_runs = ProductionRun.objects.filter(
+            date=today,
+            # is_completed=False
+        ).order_by('-date', '-production_start')
+
+        all_incomplete_runs = ProductionRun.objects.filter(
             is_completed=False
         ).order_by('-date', '-production_start')
+       
+    # combine today's runs and all incomplete runs
+        return today_runs | all_incomplete_runs
 
 class CreateProductionRunView(LoginRequiredMixin, CreateView):
     model = ProductionRun
