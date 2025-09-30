@@ -322,8 +322,8 @@ class WeeklySummaryPDFView(ReportsPermissionMixin, View):
             'form': form,
         }
         
-        # Generate PDF
-        pdf_bytes = WeeklyReportPDFGenerator.generate_weekly_pdf(context)
+        # Generate PDF with fallback support
+        pdf_bytes = WeeklyReportPDFGenerator.generate_weekly_pdf_with_fallback(context)
         
         # Return PDF response
         response = HttpResponse(pdf_bytes, content_type='application/pdf')

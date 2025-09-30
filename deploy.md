@@ -143,6 +143,107 @@ sqlite3 db.sqlite3 "PRAGMA wal_autocheckpoint;"
 # Should return: 1000
 ```
 
+### 2.6 PDF Generation Setup
+
+The application includes PDF generation functionality for reports using Playwright (with WeasyPrint as fallback). This requires additional system dependencies.
+
+#### Install System Dependencies for PDF Generation
+
+**Option 1: Using the automated setup script (recommended)**
+
+```bash
+# Use the provided setup script for easier installation
+cd /home/deploy/production_tracker
+chmod +x scripts/setup_pdf_production.sh
+sudo ./scripts/setup_pdf_production.sh
+```
+
+**Option 2: Manual installation**
+
+```bash
+# Install Chromium dependencies for Playwright
+sudo apt install -y \
+    libnss3-dev \
+    libatk-bridge2.0-dev \
+    libdrm2 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libxss1 \
+    libasound2 \
+    fonts-liberation \
+    libappindicator3-1 \
+    libxss1 \
+    libgconf-2-4 \
+    xdg-utils \
+    wget \
+    ca-certificates \
+    chromium-browser
+
+# Install fonts for better PDF rendering
+sudo apt install -y fonts-dejavu-core fonts-freefont-ttf fonts-noto
+
+# Install WeasyPrint system dependencies (fallback PDF generator)
+sudo apt install -y \
+    build-essential \
+    python3-dev \
+    python3-pip \
+    python3-cffi \
+    python3-brotli \
+    libpango-1.0-0 \
+    libharfbuzz0b \
+    libpangoft2-1.0-0
+```
+
+#### Install Playwright Browser Binaries
+
+```bash
+# Navigate to project directory and activate venv
+cd /home/deploy/production_tracker
+source venv/bin/activate
+
+# Install Playwright browsers (this may take several minutes)
+python -m playwright install chromium
+
+# If the above fails due to network issues, the fallback WeasyPrint will be used
+# You can also use system Chromium as a fallback:
+# sudo apt install -y chromium-browser
+```
+
+#### Test PDF Generation
+
+```bash
+# Test that PDF dependencies are working
+python manage.py shell -c "
+from reports.pdf_generators import WeeklyReportPDFGenerator
+print('PDF generation dependencies installed successfully')
+"
+```
+
+**Important Notes for PDF Generation:**
+- Playwright provides the best PDF quality with full JavaScript and CSS support
+- WeasyPrint serves as a fallback if Playwright fails (CSS-only, no JavaScript charts)  
+- The application will automatically try Playwright first, then fall back to WeasyPrint
+- PDF generation requires additional memory - ensure your VPS has at least 1GB RAM
+- If PDF generation fails in production, check the Django logs for specific error messages
+
+#### Memory Considerations
+
+PDF generation (especially with Playwright) can be memory-intensive. For low-memory VPS instances:
+
+```bash
+# Add swap file if needed (for servers with < 2GB RAM)
+sudo fallocate -l 1G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# Make swap permanent
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
 ## Phase 3: Gunicorn Configuration
 
 The project includes `gunicorn_config.py` with optimal settings. Update the paths if needed:
@@ -249,9 +350,10 @@ server {
         proxy_redirect off;
         proxy_buffering off;
         
-        # Timeouts
+        # Timeouts (PDF generation may take longer)
         proxy_read_timeout 300s;
         proxy_connect_timeout 75s;
+        proxy_send_timeout 300s;
     }
     
     # Health check endpoint
@@ -439,6 +541,9 @@ source $VENV_DIR/bin/activate
 # Install/update dependencies
 pip install -r requirements/base.txt
 
+# Install/update Playwright browsers (for PDF generation)
+python -m playwright install chromium
+
 # Build Tailwind CSS
 echo "Building Tailwind CSS..."
 cd theme/static_src
@@ -540,6 +645,8 @@ sqlite3 /home/deploy/production_tracker/db.sqlite3 ".dbinfo"
 
 ### Troubleshooting
 
+#### General Application Issues
+
 ```bash
 # Check if Gunicorn is running
 ps aux | grep gunicorn
@@ -560,6 +667,73 @@ df -h
 
 # Check memory usage
 free -h
+```
+
+#### PDF Generation Issues
+
+If PDF generation is failing in production:
+
+```bash
+# Check if Playwright is installed correctly
+cd /home/deploy/production_tracker
+source venv/bin/activate
+python -c "from playwright.async_api import async_playwright; print('Playwright OK')"
+
+# Check if browser binaries are installed
+python -m playwright install --help
+
+# Test Playwright browser launch
+python -c "
+import asyncio
+from playwright.async_api import async_playwright
+
+async def test():
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True, args=['--no-sandbox'])
+        print('Browser launched successfully')
+        await browser.close()
+
+asyncio.run(test())
+"
+
+# Check WeasyPrint fallback
+python -c "
+import weasyprint
+print('WeasyPrint OK')
+html = weasyprint.HTML(string='<h1>Test</h1>')
+pdf = html.write_pdf()
+print('WeasyPrint PDF generation OK')
+"
+
+# Check system dependencies
+dpkg -l | grep -E "(libnss3|libgtk-3|chromium)"
+
+# Check available memory (PDF generation needs memory)
+free -m
+
+# View PDF-specific error logs
+tail -f /home/deploy/production_tracker/django.log | grep -i pdf
+```
+
+**Common PDF Issues & Solutions:**
+
+1. **Browser launch fails**: Install missing system dependencies
+2. **Permission denied**: Check file permissions and user context  
+3. **Out of memory**: Add swap space or increase VPS memory
+4. **Network timeout**: Browser downloads may fail - use system chromium as fallback
+5. **Charts not rendering**: Check that JavaScript has time to load (timeout settings)
+
+**Quick Fix Commands:**
+```bash
+# Reinstall browser binaries
+cd /home/deploy/production_tracker && source venv/bin/activate
+python -m playwright install chromium --force
+
+# Use system browser as fallback
+sudo apt install -y chromium-browser
+
+# Restart service after PDF fixes
+sudo systemctl restart production_tracker
 ```
 
 ## Performance Optimization
@@ -595,6 +769,9 @@ send_timeout 10;
 - [ ] Node.js and npm installed for Tailwind CSS compilation
 - [ ] Project cloned and dependencies installed
 - [ ] Environment variables configured
+- [ ] **PDF generation system dependencies installed**
+- [ ] **Playwright browser binaries installed**
+- [ ] **PDF generation tested and working**
 - [ ] Tailwind CSS built and compiled
 - [ ] Database migrated and WAL mode verified
 - [ ] Static files collected
