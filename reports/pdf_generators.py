@@ -70,8 +70,7 @@ class WeeklyReportPDFGenerator:
                     format='A4',
                     print_background=True,
                     margin={'top': '0.5in', 'bottom': '0.5in', 'left': '0.5in', 'right': '0.5in'},
-                    landscape=True,
-                    timeout=30000  # 30 second timeout for PDF generation
+                    landscape=True
                 )
             finally:
                 await browser.close()

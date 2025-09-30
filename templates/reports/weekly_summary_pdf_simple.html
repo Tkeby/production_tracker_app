@@ -245,46 +245,9 @@
         </div>
     </div>
 
-    <!-- Daily Breakdown -->
-    <div class="daily-breakdown">
-        <h3>Daily Breakdown</h3>
-        <div class="daily-grid">
-            {% for date, daily_data in summary.daily_summaries.items %}
-            <div class="day-card {% if daily_data.daily_totals.total_runs %}has-production{% endif %}">
-                <div class="day-header">{{ date|date:"D" }}</div>
-                <div class="day-date">{{ date|date:"M d" }}</div>
-                
-                {% if daily_data.daily_totals.total_runs %}
-                    <div class="day-metric">
-                        <div class="day-metric-value">{{ daily_data.daily_totals.total_production|floatformat:0|default:"0"|intcomma }}</div>
-                        <div class="day-metric-label">Packs</div>
-                    </div>
-                    <div class="day-metric">
-                        <div class="day-metric-value">{{ daily_data.daily_totals.avg_oee|floatformat:1|default:"0" }}%</div>
-                        <div class="day-metric-label">OEE</div>
-                    </div>
-                    <div class="day-metric">
-                        <div class="day-metric-value">{{ daily_data.daily_totals.total_production_time_minutes|floatformat:0|default:"0"|intcomma }}</div>
-                        <div class="day-metric-label">Prod. Time</div>
-                    </div>
-                    <div class="day-metric">
-                        <div class="day-metric-value">{{ daily_data.daily_totals.total_runs }} runs</div>
-                        <div class="day-metric-label">Runs</div>
-                    </div>
-                {% else %}
-                    <div class="no-production">No Production</div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
     <!-- Product Summary Table -->
     {% if product_summary %}
-    <div class="page-break">
-        <h3>Weekly Production by Line & Package</h3>
-        <div style="font-size: 14px; color: #666; margin-bottom: 15px;">{{ product_summary.date_range }}</div>
-        
+    <div class="">
         <table class="production-table">
             <thead>
                 <tr>
