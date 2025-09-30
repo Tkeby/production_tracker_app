@@ -478,3 +478,82 @@ class ProductionCalculationService:
             'date_range': sorted_dates,
             'total_products': len(products)
         }
+
+    @staticmethod
+    def calculate_product_summary_by_line_product_package(start_date: date, end_date: date, 
+                                                        production_line: Optional[ProductionLine] = None) -> Dict:
+        """
+        Calculate product summary grouped by Production Line → Product → Package Size
+        Returns structured data suitable for creating a product summary table
+        """
+        
+        queryset = ProductionRun.objects.filter(
+            date__range=[start_date, end_date]
+        )
+        
+        if production_line:
+            queryset = queryset.filter(production_line=production_line)
+        
+        # Get all unique package sizes to create column headers
+        package_sizes = set()
+        
+        # Get the raw data grouped by line, product, and package size
+        raw_data = queryset.values(
+            'production_line__name',
+            'product__name', 
+            'package_size__size',
+            'package_size__volume_ml'
+        ).annotate(
+            total_production=Sum('good_products_pack')
+        ).order_by('production_line__name', 'product__name', 'package_size__volume_ml')
+        
+        # Collect all package sizes for headers
+        for entry in raw_data:
+            package_sizes.add((entry['package_size__size'], entry['package_size__volume_ml']))
+        
+        # Sort package sizes by volume for consistent column order
+        sorted_package_sizes = sorted(list(package_sizes), key=lambda x: x[1])  # Sort by volume_ml
+        
+        # Structure the data hierarchically
+        summary_data = {}
+        line_totals = {}
+        package_totals = {size[0]: 0 for size in sorted_package_sizes}
+        grand_total = 0
+        
+        for entry in raw_data:
+            line_name = entry['production_line__name']
+            product_name = entry['product__name']
+            package_size = entry['package_size__size']
+            production = entry['total_production'] or 0
+            
+            # Initialize line if not exists
+            if line_name not in summary_data:
+                summary_data[line_name] = {}
+                line_totals[line_name] = {size[0]: 0 for size in sorted_package_sizes}
+                line_totals[line_name]['grand_total'] = 0
+            
+            # Initialize product if not exists
+            if product_name not in summary_data[line_name]:
+                summary_data[line_name][product_name] = {size[0]: 0 for size in sorted_package_sizes}
+                summary_data[line_name][product_name]['grand_total'] = 0
+            
+            # Set the production value
+            summary_data[line_name][product_name][package_size] = production
+            summary_data[line_name][product_name]['grand_total'] += production
+            
+            # Update line totals
+            line_totals[line_name][package_size] += production
+            line_totals[line_name]['grand_total'] += production
+            
+            # Update package totals
+            package_totals[package_size] += production
+            grand_total += production
+        
+        return {
+            'summary_data': summary_data,
+            'line_totals': line_totals,
+            'package_sizes': [size[0] for size in sorted_package_sizes],  # Just the size names
+            'package_totals': package_totals,
+            'grand_total': grand_total,
+            'date_range': f"{start_date.strftime('%b %d')} - {end_date.strftime('%b %d, %Y')}"
+        }

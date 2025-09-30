@@ -120,6 +120,7 @@ class WeeklySummaryView(ReportsPermissionMixin, TemplateView):
         if form.is_valid():
             week_start_date = form.cleaned_data['week_start_date']
             production_line = form.cleaned_data['production_line']
+            week_end_date = week_start_date + timedelta(days=6)
             
             summary = ProductionCalculationService.calculate_weekly_summary(
                 week_start_date, production_line
@@ -127,11 +128,16 @@ class WeeklySummaryView(ReportsPermissionMixin, TemplateView):
             context['summary'] = summary
             
             # Calculate product trend for the week
-            week_end_date = week_start_date + timedelta(days=6)
             product_trend = ProductionCalculationService.calculate_product_trend(
                 week_start_date, week_end_date, production_line
             )
             context['product_trend'] = product_trend
+            
+            # Calculate product summary by line/product/package for the week
+            product_summary = ProductionCalculationService.calculate_product_summary_by_line_product_package(
+                week_start_date, week_end_date, production_line
+            )
+            context['product_summary'] = product_summary
         
         return context
 

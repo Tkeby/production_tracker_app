@@ -1,6 +1,7 @@
 {% extends 'layout.html' %}
 {% load static %}
 {% load humanize %}
+{% load report_extras %}
 {% block title %}Weekly Summary Report{% endblock %}
 
 {% block subtitle %}
@@ -214,6 +215,107 @@
          <!-- Product Trend Chart -->
          {% include 'reports/partials/product_trend_chart.html' with product_trend=product_trend chart_id='weeklyProductTrendChart' chart_title='Weekly Production by Product' %}
        
+         <!-- Product Summary by Line/Product/Package Table -->
+         {% if product_summary %}
+         <div class="card bg-base-100 shadow-xl my-6">
+             <div class="card-body">
+                 <h3 class="card-title text-xl mb-4">Production Summary by Line & Package</h3>
+                 <div class="text-xl text-gray-600 mb-4">{{ product_summary.date_range }}</div>
+                 
+                 <div class="overflow-x-auto">
+                     <table class="table table-sm w-full border border-blue-200 rounded-lg overflow-hidden">
+                         <thead>
+                             <tr class="bg-blue-600 text-white border-b-2 border-blue-700">
+                                 <th class="text-left font-bold border-r border-blue-500">Line/Product</th>
+                                 {% for package_size in product_summary.package_sizes %}
+                                     <th class="text-center font-bold border-r border-blue-500">{{ package_size }}</th>
+                                 {% endfor %}
+                                 <th class="text-center font-bold bg-blue-700">Grand Total</th>
+                             </tr>
+                         </thead>
+                         <tbody>
+                             {% for line_name, line_data in product_summary.summary_data.items %}
+                                 <!-- Production Line Header -->
+                                 <tr class="bg-blue-50 border-t-2 border-blue-300">
+                                     <td class="font-bold text-blue-900 uppercase tracking-wider py-2 border-r border-blue-200">{{ line_name }}</td>
+                                     {% for package_size in product_summary.package_sizes %}
+                                         <td class="text-center border-r border-blue-200"></td>
+                                     {% endfor %}
+                                     <td class="text-center bg-blue-100"></td>
+                                 </tr>
+                                 
+                                 <!-- Products under this line -->
+                                 {% for product_name, product_data in line_data.items %}
+                                     <tr class="hover:bg-blue-25 border-b border-blue-100 bg-white">
+                                         <td class="pl-6 font-bold text-gray-800 border-r border-blue-200">{{ product_name }}</td>
+                                         {% for package_size in product_summary.package_sizes %}
+                                             <td class="text-center font-mono font-semibold text-gray-800 border-r border-blue-200">
+                                                 {% with production=product_data|lookup:package_size %}
+                                                     {% if production > 0 %}
+                                                         {{ production|floatformat:0|intcomma }}
+                                                     {% else %}
+                                                         <span class="text-gray-400">-</span>
+                                                     {% endif %}
+                                                 {% endwith %}
+                                             </td>
+                                         {% endfor %}
+                                         <td class="text-center font-bold font-mono text-blue-800 bg-blue-50">
+                                             {% if product_data.grand_total > 0 %}
+                                                 {{ product_data.grand_total|floatformat:0|intcomma }}
+                                             {% else %}
+                                                 <span class="text-gray-400">-</span>
+                                             {% endif %}
+                                         </td>
+                                     </tr>
+                                 {% endfor %}
+                                 
+                                 <!-- Line Totals -->
+                                 {% with line_totals=product_summary.line_totals|lookup:line_name %}
+                                     <tr class="bg-blue-100 border-b-2 border-blue-300 font-bold">
+                                         <td class="pl-4 text-blue-900 uppercase tracking-wide py-2 border-r border-blue-300">{{ line_name }} Total</td>
+                                         {% for package_size in product_summary.package_sizes %}
+                                             <td class="text-center font-mono text-blue-900 border-r border-blue-300">
+                                                 {% with total=line_totals|lookup:package_size %}
+                                                     {% if total > 0 %}
+                                                         {{ total|floatformat:0|intcomma }}
+                                                     {% else %}
+                                                         <span class="text-blue-500">-</span>
+                                                     {% endif %}
+                                                 {% endwith %}
+                                             </td>
+                                         {% endfor %}
+                                         <td class="text-center font-bold font-mono text-blue-900 bg-blue-200">
+                                             {{ line_totals.grand_total|floatformat:0|intcomma }}
+                                         </td>
+                                     </tr>
+                                 {% endwith %}
+                             {% endfor %}
+                             
+                             <!-- Grand Total Row -->
+                             <tr class="bg-blue-600 text-white border-t-4 border-blue-700 font-bold text-lg">
+                                 <td class="uppercase tracking-wide py-3 border-r border-blue-500">Grand Total</td>
+                                 {% for package_size in product_summary.package_sizes %}
+                                     <td class="text-center font-mono border-r border-blue-500">
+                                         {% with total=product_summary.package_totals|lookup:package_size %}
+                                             {% if total > 0 %}
+                                                 {{ total|floatformat:0|intcomma }}
+                                             {% else %}
+                                                 <span class="text-blue-200">-</span>
+                                             {% endif %}
+                                         {% endwith %}
+                                     </td>
+                                 {% endfor %}
+                                 <td class="text-center font-bold font-mono text-xl bg-blue-800">
+                                     {{ product_summary.grand_total|floatformat:0|intcomma }}
+                                 </td>
+                             </tr>
+                         </tbody>
+                     </table>
+                 </div>
+             </div>
+         </div>
+         {% endif %}
+
          <!-- Weekly Trends Chart -->
         <div class="card bg-base-100 shadow-xl my-6">
             <div class="card-body">
