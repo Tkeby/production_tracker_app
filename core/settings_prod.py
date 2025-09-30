@@ -7,7 +7,7 @@ ADMIN_URL = os.environ.get('ADMIN_URL', 'admin/')
 # Security Settings
 DEBUG = False
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
-ALLOWED_HOSTS = ['7kilo.com', '148.113.181.101', 'localhost']
+ALLOWED_HOSTS = ['7kilo.com','www.7kilo.com', '148.113.181.101', 'localhost']
 
 DATABASES = {
     'default': {
