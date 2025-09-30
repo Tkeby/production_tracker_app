@@ -6,7 +6,7 @@ __pycache__/
 # C extensions
 *.so
 
-# deploy.md
+deploy.md
 
 # Distribution / packaging
 .Python

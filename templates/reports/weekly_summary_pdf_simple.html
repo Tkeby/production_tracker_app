@@ -1,275 +1,388 @@
-<!-- templates/reports/weekly_summary_pdf.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Weekly Summary Report</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @media print {
-            .chart-container { height: 300px !important; }
-            .break-page { page-break-before: always; }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            margin: 0;
+            padding: 20px;
         }
-        body { font-size: 12px; }
-        .chart-container { height: 300px; }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 15px;
+        }
+        
+        .header h1 {
+            color: #0066cc;
+            font-size: 24px;
+            margin: 0 0 10px 0;
+        }
+        
+        .header h2 {
+            color: #666;
+            font-size: 16px;
+            margin: 0;
+            font-weight: normal;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            background: #f9f9f9;
+        }
+        
+        .kpi-card.production {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .kpi-card.oee {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+        
+        .kpi-card.time {
+            border-color: #8b5cf6;
+            background: #f3e8ff;
+        }
+        
+        .kpi-card.downtime {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+        
+        .kpi-card.runs {
+            border-color: #6b7280;
+            background: #f9fafb;
+        }
+        
+        .kpi-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .daily-breakdown {
+            margin: 30px 0;
+        }
+        
+        .daily-breakdown h3 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .daily-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .day-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            background: white;
+        }
+        
+        .day-card.has-production {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .day-header {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        
+        .day-date {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .day-metric {
+            margin: 3px 0;
+        }
+        
+        .day-metric-value {
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .day-metric-label {
+            font-size: 8px;
+            color: #666;
+        }
+        
+        .production-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 11px;
+        }
+        
+        .production-table th,
+        .production-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .production-table th {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .production-table .line-header {
+            background-color: #eff6ff;
+            color: #1e40af;
+            font-weight: bold;
+            text-align: left;
+        }
+        
+        .production-table .product-row {
+            background-color: white;
+        }
+        
+        .production-table .product-name {
+            text-align: left;
+            padding-left: 20px;
+        }
+        
+        .production-table .line-total {
+            background-color: #dbeafe;
+            font-weight: bold;
+        }
+        
+        .production-table .grand-total {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .no-production {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        @media print {
+            body { margin: 0; }
+        }
     </style>
 </head>
-<body class="bg-white">
+<body>
     {% load static %}
     {% load humanize %}
     {% load report_extras %}
     
-    <div class="container mx-auto px-4 py-6">
-        <!-- Header -->
-        <div class="text-center mb-4">
-            <h1 class="text-3xl font-bold text-gray-800">SABEV - Weekly Production Summary</h1>
-            {% if summary %}
-                <h2 class="text-xl text-gray-600 mt-2">
-                    Week of {{ summary.week_start|date:"M d" }} - {{ summary.week_end|date:"M d, Y" }}
-                    {% if summary.production_line %}({{ summary.production_line.name }}){% endif %}
-                </h2>
-            {% endif %}
-        </div>
-
+    <!-- Header -->
+    <div class="header">
+        <h1>Weekly Production Summary</h1>
         {% if summary %}
-        <!-- KPI Cards - Simplified for PDF -->
-        <div class="grid grid-cols-5 gap-4 mb-4">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-blue-600">{{ summary.weekly_totals.total_production|floatformat:0|default:"0"|intcomma }}</div>
-                <div class="text-sm text-blue-800">Total Production (packs)</div>
-            </div>
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-green-600">{{ summary.weekly_totals.avg_oee|floatformat:1|default:"0" }}%</div>
-                <div class="text-sm text-green-800">Average OEE</div>
-            </div>
-            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-purple-600">{{ summary.weekly_totals.total_production_time_minutes|floatformat:0|default:"0"|intcomma }}</div>
-                <div class="text-sm text-purple-800">Production Time (min)</div>
-            </div>
-            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-orange-600">{{ summary.weekly_totals.total_downtime|floatformat:0|default:"0"|intcomma }}</div>
-                <div class="text-sm text-orange-800">Total Downtime (min)</div>
-            </div>
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-gray-600">{{ summary.weekly_totals.total_runs|default:"0"|intcomma }}</div>
-                <div class="text-sm text-gray-800">Production Runs</div>
-            </div>
-        </div>
-
-        <!-- Daily Breakdown -->
-        <div class="card bg-base-100 rounded-lg shadow-sm p-4 border-gray-200 mb-6">
-            <div class="card-body">
-                <h3 class="card-title text-xl text-gray-600 mb-4">Daily Breakdown</h3>
-                <div class="grid grid-cols-1 lg:grid-cols-7 gap-4">
-                    {% for date, daily_data in summary.daily_summaries.items %}
-                    <div class="card bg-base-50 border rounded-lg {% if daily_data.daily_totals.total_runs %}border-green-200{% else %}border-gray-200{% endif %}">
-                        <div class="card-body p-4">
-                            <div class="text-center">
-                                <div class="font-bold text-lg">{{ date|date:"D" }}</div>
-                                <div class="text-sm text-gray-600">{{ date|date:"M d" }}</div>
-                                
-                                {% if daily_data.daily_totals.total_runs %}
-                                    <!-- Production Time Display -->
-                                    <div class="mt-2">
-                                        <div class="text-sm font-semibold text-purple-600">
-                                            {{ daily_data.daily_totals.total_production_time_minutes|floatformat:0|default:"0"|intcomma }}
-                                        </div>
-                                        <div class="text-xs text-gray-500">Prod. Time (min)</div>
-                                    </div>
-                                    <div class="divider my-2"></div>
-                                    
-                                    <div class="space-y-2">
-                                        <div>
-                                            <div class="text-lg font-bold text-blue-600">
-                                                {{ daily_data.daily_totals.total_production|floatformat:0|default:"0"|intcomma }}
-                                            </div>
-                                            <div class="text-xs text-gray-500">Packs</div>
-                                        </div>
-                                        
-                                        <div>
-                                            <div class="text-sm font-semibold {% if daily_data.daily_totals.avg_oee %}text-green-600{% else %}text-gray-400{% endif %}">
-                                                {{ daily_data.daily_totals.avg_oee|floatformat:1|default:"0"|intcomma }}%
-                                            </div>
-                                            <div class="text-xs text-gray-500">OEE</div>
-                                        </div>
-                                        <div>
-                                            <div class="text-sm font-semibold {% if daily_data.daily_totals.avg_syrup_yield > 80 %}text-green-600
-                                                {% elif daily_data.daily_totals.avg_syrup_yield > 70 %}text-yellow-600
-                                                {% elif daily_data.daily_totals.avg_syrup_yield > 50 %}text-orange-600
-                                                {% else %}text-gray-400{% endif %}">
-                                                {{ daily_data.daily_totals.avg_syrup_yield|floatformat:1|default:"0"|intcomma }}%
-                                            </div>
-                                            <div class="text-xs text-gray-500">Syrup Yield</div>
-                                        </div>
-                                        
-                                        <div>
-                                            <div class="text-sm {% if daily_data.daily_totals.total_downtime %}text-orange-600{% else %}text-gray-400{% endif %}">
-                                                {{ daily_data.daily_totals.total_downtime|floatformat:0|default:"0"|intcomma }}
-                                            </div>
-                                            <div class="text-xs text-gray-500">Downtime (min)</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mt-3">
-                                        <span class="badge badge-success badge-xs">{{ daily_data.daily_totals.total_runs }} runs</span>
-                                    </div>
-                                {% else %}
-                                    <!-- No Production Placeholder -->
-                                    <div class="flex flex-col items-center justify-center py-6 mt-12 text-gray-400">
-                                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                                            </svg>
-                                        </div>
-                                        <div class="text-sm font-medium text-gray-500">No Production Scheduled</div>
-                                        <!-- <div class="text-xs text-gray-400 mt-1">No runs scheduled</div> -->
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-       
-        <!-- Chart -->
-        <!-- <div class="chart-container mb-4">
-            <h3 class="text-xl font-bold mb-4">Weekly Production Trend</h3>
-            <canvas id="weeklyChart" width="800" height="300"></canvas>
-        </div> -->
-
-         <!-- Weekly Production by Line & Package -->
-        <div class="page-break">
-            {% if product_summary %}
-             <div class="card">
-                 <div class="card-body">
-                     <h3 class="card-title  text-xl text-gray-600 mb-4">Weekly Production by Line & Package</h3>
-                     <!-- <div class="text-xl text-gray-600 mb-4">{{ product_summary.date_range }}</div> -->
-                     
-                     <div class="overflow-x-auto">
-                         <table class="table table-sm w-full border border-blue-200 rounded-lg overflow-hidden">
-                             <thead>
-                                 <tr class="bg-blue-600 text-white border-b-2 border-blue-700 ">
-                                     <th class="text-left font-bold border-r border-blue-500 py-4 pl-4">Line/Product</th>
-                                     {% for package_size in product_summary.package_sizes %}
-                                         <th class="text-center font-bold border-r border-blue-500">{{ package_size }}</th>
-                                     {% endfor %}
-                                     <th class="text-center font-bold bg-blue-700">Grand Total</th>
-                                 </tr>
-                             </thead>
-                             <tbody>
-                                 {% for line_name, line_data in product_summary.summary_data.items %}
-                                     <!-- Production Line Header -->
-                                     <tr class="bg-blue-50 border-t-2 border-blue-300">
-                                         <td class="font-bold text-blue-900 uppercase tracking-wider pl-4 py-2 border-r border-blue-200">{{ line_name }}</td>
-                                         {% for package_size in product_summary.package_sizes %}
-                                             <td class="text-center border-r border-blue-200"></td>
-                                         {% endfor %}
-                                         <td class="text-center bg-blue-100"></td>
-                                     </tr>
-                                     
-                                     <!-- Products under this line -->
-                                     {% for product_name, product_data in line_data.items %}
-                                         <tr class="hover:bg-blue-25 border-b border-blue-100 bg-white">
-                                             <td class="pl-6 font-bold text-gray-800 border-r border-blue-200">{{ product_name }}</td>
-                                             {% for package_size in product_summary.package_sizes %}
-                                                 <td class="text-center font-mono font-semibold text-gray-800 border-r border-blue-200">
-                                                     {% with production=product_data|lookup:package_size %}
-                                                         {% if production > 0 %}
-                                                             {{ production|floatformat:0|intcomma }}
-                                                         {% else %}
-                                                             <span class="text-gray-400">-</span>
-                                                         {% endif %}
-                                                     {% endwith %}
-                                                 </td>
-                                             {% endfor %}
-                                             <td class="text-center font-bold font-mono text-blue-800 bg-blue-50">
-                                                 {% if product_data.grand_total > 0 %}
-                                                     {{ product_data.grand_total|floatformat:0|intcomma }}
-                                                 {% else %}
-                                                     <span class="text-gray-400">-</span>
-                                                 {% endif %}
-                                             </td>
-                                         </tr>
-                                     {% endfor %}
-                                     
-                                     <!-- Line Totals -->
-                                     {% with line_totals=product_summary.line_totals|lookup:line_name %}
-                                         <tr class="bg-blue-100 border-b-2 border-blue-300 font-bold">
-                                             <td class="pl-4 text-blue-900 uppercase tracking-wide py-2 border-r border-blue-300">{{ line_name }} Total</td>
-                                             {% for package_size in product_summary.package_sizes %}
-                                                 <td class="text-center font-mono text-blue-900 border-r border-blue-300">
-                                                     {% with total=line_totals|lookup:package_size %}
-                                                         {% if total > 0 %}
-                                                             {{ total|floatformat:0|intcomma }}
-                                                         {% else %}
-                                                             <span class="text-blue-500">-</span>
-                                                         {% endif %}
-                                                     {% endwith %}
-                                                 </td>
-                                             {% endfor %}
-                                             <td class="text-center font-bold font-mono text-blue-900 bg-blue-200">
-                                                 {{ line_totals.grand_total|floatformat:0|intcomma }}
-                                             </td>
-                                         </tr>
-                                     {% endwith %}
-                                 {% endfor %}
-                                 
-                                 <!-- Grand Total Row -->
-                                 <tr class="bg-blue-600 text-white border-t-4 border-blue-700 font-bold text-lg">
-                                     <td class="uppercase tracking-wide pl-4 py-2 border-r border-blue-500">Grand Total</td>
-                                     {% for package_size in product_summary.package_sizes %}
-                                         <td class="text-center font-mono border-r border-blue-500">
-                                             {% with total=product_summary.package_totals|lookup:package_size %}
-                                                 {% if total > 0 %}
-                                                     {{ total|floatformat:0|intcomma }}
-                                                 {% else %}
-                                                     <span class="text-blue-200">-</span>
-                                                 {% endif %}
-                                             {% endwith %}
-                                         </td>
-                                     {% endfor %}
-                                     <td class="text-center font-bold font-mono text-xl bg-blue-800">
-                                         {{ product_summary.grand_total|floatformat:0|intcomma }}
-                                     </td>
-                                 </tr>
-                             </tbody>
-                         </table>
-                     </div>
-                 </div>
-             </div>
-             {% endif %}
-        </div>
-       
-
+            <h2>
+                Week of {{ summary.week_start|date:"M d" }} - {{ summary.week_end|date:"M d, Y" }}
+                {% if summary.production_line %}({{ summary.production_line.name }}){% endif %}
+            </h2>
         {% endif %}
     </div>
 
-    <!-- Chart JavaScript -->
-    <script>
     {% if summary %}
-    const ctx = document.getElementById('weeklyChart').getContext('2d');
-    const weeklyChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [{% for date, daily_data in summary.daily_summaries.items %}'{{ date|date:"M d" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-            datasets: [{
-                label: 'Production (Packs)',
-                data: [{% for date, daily_data in summary.daily_summaries.items %}{{ daily_data.daily_totals.total_production|floatformat:0|default:"0" }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                backgroundColor: 'rgba(59, 130, 246, 0.7)',
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: { display: true, text: 'Production Volume vs OEE Percentage' }
-            }
-        }
-    });
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card production">
+            <div class="kpi-value">{{ summary.weekly_totals.total_production|floatformat:0|default:"0"|intcomma }}</div>
+            <div class="kpi-label">Total Production (packs)</div>
+        </div>
+        <div class="kpi-card oee">
+            <div class="kpi-value">{{ summary.weekly_totals.avg_oee|floatformat:1|default:"0" }}%</div>
+            <div class="kpi-label">Average OEE</div>
+        </div>
+        <div class="kpi-card time">
+            <div class="kpi-value">{{ summary.weekly_totals.total_production_time_minutes|floatformat:0|default:"0"|intcomma }}</div>
+            <div class="kpi-label">Production Time (min)</div>
+        </div>
+        <div class="kpi-card downtime">
+            <div class="kpi-value">{{ summary.weekly_totals.total_downtime|floatformat:0|default:"0"|intcomma }}</div>
+            <div class="kpi-label">Total Downtime (min)</div>
+        </div>
+        <div class="kpi-card runs">
+            <div class="kpi-value">{{ summary.weekly_totals.total_runs|default:"0"|intcomma }}</div>
+            <div class="kpi-label">Production Runs</div>
+        </div>
+    </div>
+
+    <!-- Daily Breakdown -->
+    <div class="daily-breakdown">
+        <h3>Daily Breakdown</h3>
+        <div class="daily-grid">
+            {% for date, daily_data in summary.daily_summaries.items %}
+            <div class="day-card {% if daily_data.daily_totals.total_runs %}has-production{% endif %}">
+                <div class="day-header">{{ date|date:"D" }}</div>
+                <div class="day-date">{{ date|date:"M d" }}</div>
+                
+                {% if daily_data.daily_totals.total_runs %}
+                    <div class="day-metric">
+                        <div class="day-metric-value">{{ daily_data.daily_totals.total_production|floatformat:0|default:"0"|intcomma }}</div>
+                        <div class="day-metric-label">Packs</div>
+                    </div>
+                    <div class="day-metric">
+                        <div class="day-metric-value">{{ daily_data.daily_totals.avg_oee|floatformat:1|default:"0" }}%</div>
+                        <div class="day-metric-label">OEE</div>
+                    </div>
+                    <div class="day-metric">
+                        <div class="day-metric-value">{{ daily_data.daily_totals.total_production_time_minutes|floatformat:0|default:"0"|intcomma }}</div>
+                        <div class="day-metric-label">Prod. Time</div>
+                    </div>
+                    <div class="day-metric">
+                        <div class="day-metric-value">{{ daily_data.daily_totals.total_runs }} runs</div>
+                        <div class="day-metric-label">Runs</div>
+                    </div>
+                {% else %}
+                    <div class="no-production">No Production</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Product Summary Table -->
+    {% if product_summary %}
+    <div class="page-break">
+        <h3>Weekly Production by Line & Package</h3>
+        <div style="font-size: 14px; color: #666; margin-bottom: 15px;">{{ product_summary.date_range }}</div>
+        
+        <table class="production-table">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Line/Product</th>
+                    {% for package_size in product_summary.package_sizes %}
+                        <th>{{ package_size }}</th>
+                    {% endfor %}
+                    <th>Grand Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line_name, line_data in product_summary.summary_data.items %}
+                    <!-- Production Line Header -->
+                    <tr class="line-header">
+                        <td style="text-align: left;">{{ line_name }}</td>
+                        {% for package_size in product_summary.package_sizes %}
+                            <td></td>
+                        {% endfor %}
+                        <td></td>
+                    </tr>
+                    
+                    <!-- Products under this line -->
+                    {% for product_name, product_data in line_data.items %}
+                        <tr class="product-row">
+                            <td class="product-name">{{ product_name }}</td>
+                            {% for package_size in product_summary.package_sizes %}
+                                <td>
+                                    {% with production=product_data|lookup:package_size %}
+                                        {% if production > 0 %}
+                                            {{ production|floatformat:0|intcomma }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+                            {% endfor %}
+                            <td style="font-weight: bold;">
+                                {% if product_data.grand_total > 0 %}
+                                    {{ product_data.grand_total|floatformat:0|intcomma }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    
+                    <!-- Line Totals -->
+                    {% with line_totals=product_summary.line_totals|lookup:line_name %}
+                        <tr class="line-total">
+                            <td style="text-align: left; font-weight: bold;">{{ line_name }} Total</td>
+                            {% for package_size in product_summary.package_sizes %}
+                                <td>
+                                    {% with total=line_totals|lookup:package_size %}
+                                        {% if total > 0 %}
+                                            {{ total|floatformat:0|intcomma }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+                            {% endfor %}
+                            <td style="font-weight: bold;">
+                                {{ line_totals.grand_total|floatformat:0|intcomma }}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                {% endfor %}
+                
+                <!-- Grand Total Row -->
+                <tr class="grand-total">
+                    <td style="text-align: left;">GRAND TOTAL</td>
+                    {% for package_size in product_summary.package_sizes %}
+                        <td>
+                            {% with total=product_summary.package_totals|lookup:package_size %}
+                                {% if total > 0 %}
+                                    {{ total|floatformat:0|intcomma }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                    {% endfor %}
+                    <td style="font-weight: bold; font-size: 14px;">
+                        {{ product_summary.grand_total|floatformat:0|intcomma }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     {% endif %}
-    </script>
+
+    {% else %}
+    <!-- No Data State -->
+    <div class="no-production">
+        <h3>No Data Available</h3>
+        <p>Please select a week start date and optionally a production line to view weekly summary data.</p>
+    </div>
+    {% endif %}
+
 </body>
 </html>
