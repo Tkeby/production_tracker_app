@@ -17,7 +17,10 @@ urlpatterns = [
     path('oee-trend/', views.OEETrendView.as_view(), name='oee_trend'),
     path('downtime-analysis/', views.DowntimeAnalysisView.as_view(), name='downtime_analysis'),
     path('machine-utilization/', views.MachineUtilizationView.as_view(), name='machine_utilization'),
-    
+
+    # weekly summary pdf
+    path('weekly-summary/pdf/', views.WeeklySummaryPDFView.as_view(), name='weekly_summary_pdf'),
+   
     # HTMX endpoints for dynamic content
     path('htmx/alerts/', views.production_alerts_htmx, name='alerts_htmx'),
     path('htmx/daily-summary/<str:date>/', views.daily_summary_htmx, name='daily_summary_htmx'),

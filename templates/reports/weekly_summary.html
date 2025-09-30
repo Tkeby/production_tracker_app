@@ -41,9 +41,18 @@
                         </label>
                         {{ form.production_line }}
                     </div>
-                    <div class="form-control md:col-span-2">
+                    <div class="form-control md:col-span-2 flex justify-between">
                         <button type="submit" class="btn btn-primary">Generate Weekly Report</button>
+                        {% if summary %}
+                        <div class="form-control md:col-span-2 mt-4">
+                            <a href="{% url 'reports:weekly_summary_pdf' %}?{{ request.GET.urlencode }}" 
+                            class="btn btn-secondary">
+                                📄 Download PDF Report
+                            </a>
+                        </div>
+                    {% endif %}
                     </div>
+                    
                 </form>
             </div>
         </div>
@@ -210,16 +219,12 @@
                 </div>
             </div>
         </div>
-
-
-         <!-- Product Trend Chart -->
-         {% include 'reports/partials/product_trend_chart.html' with product_trend=product_trend chart_id='weeklyProductTrendChart' chart_title='Weekly Production by Product' %}
-       
+        
          <!-- Product Summary by Line/Product/Package Table -->
          {% if product_summary %}
          <div class="card bg-base-100 shadow-xl my-6">
              <div class="card-body">
-                 <h3 class="card-title text-xl mb-4">Production Summary by Line & Package</h3>
+                 <h3 class="card-title text-xl mb-4">Weekly Production by Line & Package</h3>
                  <div class="text-xl text-gray-600 mb-4">{{ product_summary.date_range }}</div>
                  
                  <div class="overflow-x-auto">
@@ -315,6 +320,11 @@
              </div>
          </div>
          {% endif %}
+
+         <!-- Product Trend Chart -->
+         {% include 'reports/partials/product_trend_chart.html' with product_trend=product_trend chart_id='weeklyProductTrendChart' chart_title='Weekly Production by Product' %}
+       
+        
 
          <!-- Weekly Trends Chart -->
         <div class="card bg-base-100 shadow-xl my-6">
