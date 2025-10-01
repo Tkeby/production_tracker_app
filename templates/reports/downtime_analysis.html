@@ -101,10 +101,10 @@
                             <tr>
                                 <th class="w-20">#</th>
                                 <th>Machine</th>
-                                <th>Code</th>
+                                <!-- <th>Code</th> -->
                                 <th>Code Reason</th>
                                 <th class="text-center">Total Duration</th>
-                                <th class="text-center">Occurrences</th>
+                                <th class="text-center">#Occurrences</th>
                                 <th class="text-center">Avg Duration</th>
                                 <th class="text-center">% of Total</th>
                                 <th>Impact</th>
@@ -119,12 +119,13 @@
                                         <div class="font-semibold">{{ item.machine__machine_name|default:"No description provided" }}</div>
                                     </div>
                                 </td>
+                                <!-- <td>
+                                    <span class="badge badge-outline font-mono">{{ item.code__code }}</span>
+                                </td> -->
                                 <td>
-                                    <span class="badge badge-outline font-mono">{{ item.code }}</span>
-                                </td>
-                                <td>
-                                    <div class="max-w-xs">
+                                    <div class="max-w-xs flex flex-col gap-1">
                                         <div class="font-semibold">{{ item.code__reason|default:"No description provided" }}</div>
+                                        <div class="badge badge-outline font-mono text-gray-500">{{ item.code__code }}</span>
                                     </div>
                                 </td>
                                
