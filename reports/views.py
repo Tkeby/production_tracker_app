@@ -213,6 +213,11 @@ class DowntimeAnalysisView(DetailedReportsPermissionMixin, TemplateView):
             downtime_data = ProductionCalculationService.get_top_downtime_reasons(
                 start_date, end_date, production_line, limit
             )
+            oee_trend = ProductionCalculationService.calculate_oee_trend(
+                start_date, end_date, production_line
+            )
+            
+            context['oee_trend'] = oee_trend
             context['downtime_data'] = downtime_data
             context['date_range'] = f"{start_date} to {end_date}"
             

@@ -385,7 +385,7 @@ class ProductionCalculationService:
             if len(code_reason) > 25:
                 code_reason = code_reason[:22] + '...'
             
-            categories.append(f"{item['code__code']} - {code_reason}")
+            categories.append(f"{code_reason}")
             values.append(item['total_duration'])
             
             # Calculate cumulative percentage

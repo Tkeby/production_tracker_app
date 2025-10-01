@@ -8,9 +8,7 @@
 {% endblock %}
 
 {% block subtitle %}
-<p class="text-lg md:text-xl text-base-content/70 max-w-3xl">
     Production performance summary by shift
-</p>
 {% endblock %}
 
 {% block breadcrumbs %}
@@ -113,12 +111,20 @@
                         </div>
                     {% else %}
                         <!-- Single line production display -->
-                        <div class="text-center flex flex-col justify-center">
+                        <!-- <div class="text-center flex flex-col justify-center items-center">
+                            <div class="text-3xl font-bold text-blue-600">
+                                {{ summary.total_production|floatformat:0|intcomma }}
+                            </div>
+                            <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
+                        </div> -->
+                        
+                        <div class="card-body text-center flex flex-col justify-center">
                             <div class="text-3xl font-bold text-blue-600">
                                 {{ summary.total_production|floatformat:0|intcomma }}
                             </div>
                             <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
                         </div>
+                        
                     {% endif %}
                 </div>
             </div>
@@ -170,36 +176,37 @@
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
                 <div class="flex items-center justify-between">
-                    <h3 class="card-title text-xl mb-4">Production Runs </h3>
-                    <span class="text-sm text-gray-500 mb-4">Date: {{ form.shift_date.value }}</span>
+                    <h3 class="card-title text-xl mb-4">Production Runs <span>({{selected_line.name|default:"All Lines"}}) </span> </h3>
+
+                    <span class="text-sm text-gray-500 mb-4">Date: {{ shift_date }}</span>
                 </div>
                 {% if summary.runs %}
                 <div class="overflow-x-auto">
                     <table class="table table-zebra w-full">
                         <thead>
                             <tr>
-                                <th>Batch Number</th>
+                                <!-- <th>Batch Number</th> -->
                                 <th>Line</th>
                                 <th>Product</th>
                                 <th>Production</th> 
                                 <th>Syrup Yield</th>
                                 <th>Downtime</th>
                                 <th>OEE</th>
-                                <th>Status</th>
+                                <!-- <th>Status</th> -->
                             </tr>
                         </thead>
                         <tbody>
                             {% for run in summary.runs %}
                             <tr class="text-left">
-                                <td class="font-mono text-sm">
-                                    <!-- only show the first 10 characters -->
+                                <!-- <td class="font-mono text-sm">
+                                   
                                     <a href="#" class="link link-primary">{{ run.production_batch_number|slice:":10" }}...</a>
-                                    <!-- here we have a tooltip that shows the full batch number -->
-                                    <!-- <div class="tooltip tooltip-bottom" data-tip="{{ run.production_batch_number }}">
+                                   
+                                    <div class="tooltip tooltip-bottom" data-tip="{{ run.production_batch_number }}">
                                         <a href="#" class="link link-primary">{{ run.production_batch_number|slice:":10" }}...</a>
-                                    </div> -->
+                                    </div>
                                
-                                </td>
+                                </td> -->
                                 <td>
                                     <div class="font-semibold">{{ run.production_line.name }}</div>
                                     <div class="text-xs text-gray-500">{{ run.production_line.rated_speed | floatformat:0|intcomma }} <span class="text-xs text-gray-500">bph</span></div>
@@ -229,11 +236,11 @@
                                     <div class="font-bold">{{ run.report.oee|floatformat:1 }}%</div>
                                     <!-- <div class="text-xs text-gray-500">%</div> -->
                                 </td>
-                                <td>
+                                <!-- <td>
                                     <span class="badge {% if run.is_completed %}badge-success{% else %}badge-warning{% endif %}">
                                         {% if run.is_completed %}Completed{% else %}In Progress{% endif %}
                                     </span>
-                                </td>
+                                </td> -->
                             </tr>
                             {% endfor %}
                         </tbody>
