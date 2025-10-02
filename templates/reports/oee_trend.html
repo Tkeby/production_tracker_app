@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% load static %}
-
+{% load humanize %}
 {% block title %}OEE Trend Analysis{% endblock %}
 
 {% block subtitle %}
@@ -16,13 +16,13 @@
 
 {% block main_content %}
 <div class="container mx-auto px-4 py-8">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-7xl mx-auto space-y-8">
         
         <!-- Header -->
         
 
         <!-- Filter Form -->
-        <div class="card bg-base-100 shadow-xl mb-8">
+        <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
                 <h3 class="card-title mb-4">Analysis Period</h3>
                 <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -74,10 +74,27 @@
             </div>
         </div>
 
-        {% if trend_data %}
+        {% if oee_data %}
+
+        <!-- Report Header -->
+        <div class="card bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-xl">
+            <div class="card-body">
+                <div class="flex items-center justify-center">
+                    <div class="text-center">
+                        <h2 class="text-3xl font-bold">OEE Analysis</h2>
+                        <p class="text-lg opacity-90 mt-2">
+                                {{ oee_data.period.start_date|date:"M d, Y" }} - {{ oee_data.period.end_date|date:"M d, Y" }}
+                        </p>
+                        <p class="text-sm opacity-75">{{ oee_data.period.production_line }}{% if oee_data.period.machine != 'All Machines' %} - {{ oee_data.period.machine }}{% endif %}</p>
+                    </div>
+                   
+                </div>
+            </div>
+        </div>
+
         <!-- OEE Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {% with trend_data as data %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% with oee_data.oee_trend as data %}
             {% for item in data %}
                 {% if forloop.first %}
                     <!-- Calculate averages for the period -->
@@ -88,7 +105,7 @@
                                 {{ data.0.avg_oee|floatformat:1|default:"0" }}%
                             </div>
                             <div class="text-sm text-blue-800 font-semibold">Average OEE</div>
-                            <div class="text-xs text-blue-600 mt-1">{{ start_date|date:"M d" }} - {{ end_date|date:"M d" }}</div>
+                            
                         </div>
                     </div>
                     <div class="card bg-green-50 border border-green-200">
@@ -120,14 +137,21 @@
             {% endwith %}
         </div>
 
-        <!-- OEE Trend Chart -->
-        <div class="card bg-base-100 shadow-xl mb-8">
-            <div class="card-body">
-                <h3 class="card-title text-xl mb-4">OEE Components Trend</h3>
-                <div class="h-96">
-                    <canvas id="oeeChart"></canvas>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <!-- OEE Trend Chart -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">OEE Components Trend</h3>
+                    <div class="h-96">
+                        <canvas id="oeeChart"></canvas>
+                    </div>
                 </div>
             </div>
+    
+             <!-- Downtime Analysis -->
+             {% if oee_data.downtime_analysis %}
+             {% include 'reports/partials/pareto_chart.html' with pareto_data=oee_data.downtime_pareto_data chart_title="Downtime Analysis - Pareto Chart" chart_id="downtimePareto" %}
+             {% endif %}
         </div>
 
         <!-- Daily OEE Performance Table -->
@@ -148,7 +172,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for item in trend_data %}
+                            {% for item in oee_data.oee_trend %}
                             <tr>
                                 <td class="font-semibold">{{ item.production_run__date|date:"M d, Y" }}</td>
                                 <td class="text-center">
@@ -183,6 +207,86 @@
             </div>
         </div>
 
+
+        
+        <!-- Detailed Downtime Table -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title text-xl mb-4">Detailed Downtime Analysis</h3>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th class="w-20">#</th>
+                                <th>Machine</th>
+                                <!-- <th>Code</th> -->
+                                <th>Code Reason</th>
+                                <th class="text-center">Total Duration</th>
+                                <th class="text-center">#Occurrences</th>
+                                <th class="text-center">Avg Duration</th>
+                                <th class="text-center">% of Total</th>
+                                <th>Impact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in oee_data.downtime_analysis %}
+                            <tr>
+                                <td class="font-bold text-lg">{{ forloop.counter }}</td>
+                                <td>
+                                    <div class="max-w-xs">
+                                        <div class="font-semibold">{{ item.machine__machine_name|default:"No description provided" }}</div>
+                                    </div>
+                                </td>
+                                <!-- <td>
+                                    <span class="badge badge-outline font-mono">{{ item.code__code }}</span>
+                                </td> -->
+                                <td>
+                                    <div class="max-w-xs flex flex-col gap-1">
+                                        <div class="font-semibold">{{ item.code__reason|default:"No description provided" }}</div>
+                                        <div class="badge badge-outline font-mono text-gray-500">{{ item.code__code }}</span>
+                                    </div>
+                                </td>
+                               
+                                <td class="text-center">
+                                    <div class="font-bold text-lg {% if item.total_duration > 120 %}text-red-600{% elif item.total_duration > 60 %}text-orange-600{% else %}text-green-600{% endif %}">
+                                        {{ item.total_duration|floatformat:0|intcomma }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">minutes</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-bold text-lg text-blue-600">{{ item.occurrence_count }}</div>
+                                    <div class="text-xs text-gray-500">times</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-semibold">
+                                        {{ item.avg_duration|floatformat:1 }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">min/occurrence</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-semibold">
+                                        {{ item.percentage_of_total|default:"0" }}%
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.total_duration > 240 %}
+                                        <span class="badge badge-error">Critical</span>
+                                    {% elif item.total_duration > 120 %}
+                                        <span class="badge badge-warning">High</span>
+                                    {% elif item.total_duration > 60 %}
+                                        <span class="badge badge-info">Medium</span>
+                                    {% else %}
+                                        <span class="badge badge-success">Low</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         {% else %}
         <!-- No Data State -->
         <div class="card bg-base-100 shadow-xl">
@@ -206,13 +310,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // OEE Trend Chart
-{% if trend_data %}
+{% if oee_data %}
 const ctx = document.getElementById('oeeChart').getContext('2d');
 const oeeChart = new Chart(ctx, {
     type: 'line',
     data: {
         labels: [
-            {% for item in trend_data %}
+            {% for item in oee_data.oee_trend %}
                 '{{ item.production_run__date|date:"M d" }}'{% if not forloop.last %},{% endif %}
             {% endfor %}
         ],
@@ -220,7 +324,7 @@ const oeeChart = new Chart(ctx, {
             {
                 label: 'OEE %',
                 data: [
-                    {% for item in trend_data %}
+                    {% for item in oee_data.oee_trend %}
                         {{ item.avg_oee|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 ],
@@ -233,7 +337,7 @@ const oeeChart = new Chart(ctx, {
             {
                 label: 'Availability %',
                 data: [
-                    {% for item in trend_data %}
+                    {% for item in oee_data.oee_trend %}
                         {{ item.avg_availability|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 ],
@@ -246,7 +350,7 @@ const oeeChart = new Chart(ctx, {
             {
                 label: 'Performance %',
                 data: [
-                    {% for item in trend_data %}
+                    {% for item in oee_data.oee_trend %}
                         {{ item.avg_performance|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 ],
@@ -259,7 +363,7 @@ const oeeChart = new Chart(ctx, {
             {
                 label: 'Quality %',
                 data: [
-                    {% for item in trend_data %}
+                    {% for item in oee_data.oee_trend %}
                         {{ item.avg_quality|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 ],

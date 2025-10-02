@@ -38,9 +38,10 @@ class ReportsDashboardView(ReportsPermissionMixin, TemplateView):
         week_summary = ProductionCalculationService.calculate_weekly_summary(week_start)
         
         # Get OEE trend for last 7 days
-        oee_trend = ProductionCalculationService.calculate_oee_trend(
+        oee_data = ProductionCalculationService.calculate_oee_trend(
             today - timedelta(days=6), today
         )
+        oee_trend = oee_data.get('oee_trend', []) if isinstance(oee_data, dict) else oee_data
         
         # Get top downtime reasons for last 7 days
         top_downtime = ProductionCalculationService.get_top_downtime_reasons(
@@ -183,12 +184,11 @@ class OEETrendView(DetailedReportsPermissionMixin, TemplateView):
             production_line = form.cleaned_data['production_line']
             machine = form.cleaned_data['machine']
             
-            trend_data = ProductionCalculationService.calculate_oee_trend(
+            oee_data = ProductionCalculationService.calculate_oee_trend(
                 start_date, end_date, production_line, machine
             )
-            context['trend_data'] = trend_data
-            context['start_date'] = start_date
-            context['end_date'] = end_date
+            context['oee_data'] = oee_data
+           
         
         return context
 
@@ -211,11 +211,16 @@ class DowntimeAnalysisView(DetailedReportsPermissionMixin, TemplateView):
             downtime_data = ProductionCalculationService.get_top_downtime_reasons(
                 start_date, end_date, production_line, limit
             )
-            oee_trend = ProductionCalculationService.calculate_oee_trend(
+            oee_data = ProductionCalculationService.calculate_oee_trend(
                 start_date, end_date, production_line
             )
             
-            context['oee_trend'] = oee_trend
+            context['oee_trend'] = oee_data.get('oee_trend', []) if isinstance(oee_data, dict) else oee_data
+            
+            # Include additional data if available
+            if isinstance(oee_data, dict):
+                context['oee_downtime_analysis'] = oee_data.get('downtime_analysis', [])
+                context['oee_pareto_data'] = oee_data.get('downtime_pareto_data', {})
             context['downtime_data'] = downtime_data
             context['date_range'] = f"{start_date} to {end_date}"
             
@@ -355,9 +360,12 @@ def oee_chart_htmx(request, start_date, end_date):
         except ProductionLine.DoesNotExist:
             pass
     
-    trend_data = ProductionCalculationService.calculate_oee_trend(
+    oee_data = ProductionCalculationService.calculate_oee_trend(
         start, end, production_line
     )
+    
+    # Extract trend data
+    trend_data = oee_data.get('oee_trend', []) if isinstance(oee_data, dict) else oee_data
     
     # Format data for chart
     chart_data = {

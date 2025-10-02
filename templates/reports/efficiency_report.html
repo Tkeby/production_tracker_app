@@ -17,10 +17,10 @@
 {% block main_content %}
 <div class="max-w-7xl mx-auto">
 
-        <!-- Filter Form -->
+       <!-- Filter Form -->
         <div class="card bg-base-100 shadow-xl mb-8">
             <div class="card-body">
-                <h3 class="card-title mb-4">Report Parameters</h3>
+                <h3 class="card-title mb-4">Analysis Period</h3>
                 <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="form-control">
                         <label class="label">
@@ -43,7 +43,7 @@
                             class="select select-bordered w-full"
                             hx-get="{% url 'reports:machines_by_line_htmx' %}"
                             hx-trigger="change"
-                            hx-target="#machine-select"
+                            hx-target="#oee-machine-select"
                             hx-include="this"
                         >
                             <option value="">All Production Lines</option>
@@ -56,7 +56,7 @@
                         <label class="label">
                             <span class="label-text font-semibold">Machine</span>
                         </label>
-                        <select id="machine-select" name="{{ form.machine.name }}" class="select select-bordered w-full">
+                        <select id="oee-machine-select" name="{{ form.machine.name }}" class="select select-bordered w-full">
                             <option value="">All Machines</option>
                             {% for choice in form.machine.field.queryset %}
                             <option value="{{ choice.id }}" {% if form.machine.value == choice.id|stringformat:"s" %}selected{% endif %}>{{ choice.machine_name }}</option>
@@ -64,7 +64,7 @@
                         </select>
                     </div>
                     <div class="form-control lg:col-span-4">
-                        <button type="submit" class="btn btn-primary btn-lg">Generate Report</button>
+                        <button type="submit" class="btn btn-primary">Generate Report</button>
                     </div>
                 </form>
             </div>
@@ -165,14 +165,7 @@
 
             <!-- Downtime Analysis -->
             {% if report.downtime_analysis %}
-            <div class="card bg-base-100 shadow-xl">
-                <div class="card-body">
-                    <h3 class="card-title text-xl mb-4">Top Downtime Reasons</h3>
-                    <div class="h-64">
-                        <canvas id="downtimeAnalysisChart"></canvas>
-                    </div>
-                </div>
-            </div>
+            {% include 'reports/partials/pareto_chart.html' with pareto_data=report.downtime_pareto_data chart_title="Downtime Analysis - Pareto Chart" chart_id="downtimePareto" %}
             {% endif %}
         </div>
 
@@ -238,7 +231,7 @@
                                     <td>
                                         <div class="flex flex-col gap-1">
                                         <span class="font-mono">{{ item.code__reason }}</span>
-                                        <span class="badge badge-outline badge-xs font-mono">{{ item.code }}</span>
+                                        <span class="badge badge-outline badge-xs font-mono">{{ item.code__code }}</span>
                                         </div>
                                     </td>
                                     <td class="font-bold {% if item.total_duration > 120 %}text-red-600{% elif item.total_duration > 60 %}text-orange-600{% else %}text-green-600{% endif %}">
@@ -445,63 +438,6 @@ const oeeAnalysisChart = new Chart(ctxOEE, {
             mode: 'nearest',
             axis: 'x',
             intersect: false
-        }
-    }
-});
-{% endif %}
-
-// Downtime Analysis Chart
-{% if report.downtime_analysis %}
-const ctxDowntime = document.getElementById('downtimeAnalysisChart').getContext('2d');
-const downtimeAnalysisChart = new Chart(ctxDowntime, {
-    type: 'bar',
-    data: {
-        labels: [
-            {% for item in report.downtime_analysis|slice:":5" %}
-                '{{ item.code__reason }}'{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ],
-        datasets: [{
-            label: 'Duration (min)',
-            data: [
-                {% for item in report.downtime_analysis|slice:":5" %}
-                    {{ item.total_duration }}{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ],
-            backgroundColor: [
-                colors.error + '80',
-                colors.warning + '80', 
-                colors.info + '80',
-                colors.success + '80',
-                colors.primary + '80'
-            ],
-            borderColor: [
-                colors.error,
-                colors.warning,
-                colors.info,
-                colors.success,
-                colors.primary
-            ],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return value + ' min';
-                    }
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                display: false
-            }
         }
     }
 });

@@ -1,4 +1,4 @@
-from django.db.models import Sum, Avg, Count, Q, Case, When, F, Value, FloatField
+from django.db.models import Sum, Avg, Count, Q, Case, When, F, Value, FloatField, ExpressionWrapper
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import datetime, date, timedelta
@@ -169,7 +169,7 @@ class ProductionCalculationService:
     def get_top_downtime_reasons(start_date: date, end_date: date, 
                                 production_line: Optional[ProductionLine] = None, limit: int = 10,
                                 machine: Optional[Machine] = None) -> List[Dict]:
-        """Get top downtime reasons for a date range"""
+        """Get top downtime reasons for a date range with percentage and average calculations"""
         
        
         
@@ -184,10 +184,30 @@ class ProductionCalculationService:
         
         downtime_analysis = queryset.values('code__code','code__reason', 'reason', 'machine__machine_name').annotate(
             total_duration=Sum('duration_minutes'),
-            occurrence_count=Count('id')
+            occurrence_count=Count('id'),
         ).order_by('-total_duration')[:limit]
         
-        return list(downtime_analysis)
+        # Convert to list for manipulation
+        downtime_data = list(downtime_analysis)
+        
+        # Calculate total duration for percentage calculations
+        total_duration = sum(item['total_duration'] or 0 for item in downtime_data)
+        
+        # Add percentage and average calculations to each item
+        for item in downtime_data:
+            # Calculate percentage of total downtime
+            if total_duration > 0:
+                item['percentage_of_total'] = round((item['total_duration'] / total_duration) * 100, 1)
+            else:
+                item['percentage_of_total'] = 0
+            
+            # Calculate average duration per occurrence
+            if item['occurrence_count'] > 0:
+                item['avg_duration'] = round(item['total_duration'] / item['occurrence_count'], 1)
+            else:
+                item['avg_duration'] = 0
+        
+        return downtime_data
     
     @staticmethod
     def calculate_oee_trend(start_date: date, end_date: date, 
@@ -195,6 +215,17 @@ class ProductionCalculationService:
                           machine: Optional[Machine] = None) -> List[Dict]:
         """Calculate OEE trend over a date range"""
         
+
+        # Base metrics
+        base_data = {
+            'period': {
+                'start_date': start_date,
+                'end_date': end_date,
+                'production_line': production_line.name if production_line else 'All Lines',
+                'machine': machine.machine_name if machine else 'All Machines'
+            }
+        }
+
         queryset = ProductionReport.objects.filter(
             production_run__date__range=[start_date, end_date]
         )
@@ -205,6 +236,12 @@ class ProductionCalculationService:
             # Filter by production runs that have stop events for this specific machine
             queryset = queryset.filter(production_run__stop_events__machine=machine).distinct()
         
+
+         # Downtime Analysis
+        downtime_analysis = ProductionCalculationService.get_top_downtime_reasons(
+            start_date, end_date, production_line, machine=machine
+        )
+
         # Group by date and calculate average OEE
         daily_oee = queryset.values('production_run__date').annotate(
             avg_oee=Avg('oee'),
@@ -214,7 +251,20 @@ class ProductionCalculationService:
             runs_count=Count('id')
         ).order_by('production_run__date')
         
-        return list(daily_oee)
+        # Convert to list and add downtime data
+        oee_data = list(daily_oee)
+        
+        # Format downtime data for Pareto chart using existing method
+        downtime_pareto_data = ProductionCalculationService.calculate_downtime_pareto(
+            start_date, end_date, production_line
+        )
+        
+        return {
+            'period': base_data['period'],
+            'oee_trend': oee_data,
+            'downtime_analysis': downtime_analysis,
+            'downtime_pareto_data': downtime_pareto_data
+        }
     
     @staticmethod
     def generate_production_efficiency_report(start_date: date, end_date: date, 
@@ -232,15 +282,15 @@ class ProductionCalculationService:
             }
         }
         
-        # OEE Analysis
-        base_data['oee_analysis'] = ProductionCalculationService.calculate_oee_trend(
+        # OEE Analysis with downtime data
+        oee_data = ProductionCalculationService.calculate_oee_trend(
             start_date, end_date, production_line, machine
         )
+        base_data['oee_analysis'] = oee_data.get('oee_trend', [])
         
-        # Downtime Analysis
-        base_data['downtime_analysis'] = ProductionCalculationService.get_top_downtime_reasons(
-            start_date, end_date, production_line, machine=machine
-        )
+        # Use downtime data from OEE analysis to avoid duplicate calls
+        base_data['downtime_analysis'] = oee_data.get('downtime_analysis', [])
+        base_data['downtime_pareto_data'] = oee_data.get('downtime_pareto_data', {})
         
         # Production Summary
         queryset = ProductionRun.objects.filter(
