@@ -46,11 +46,15 @@ class ProductionCalculationService:
     
     @staticmethod
     def calculate_shift_summary(shift_date: date, production_line: Optional[ProductionLine] = None, 
-                               shift_type: Optional[str] = None) -> Dict:
+                               shift_type: Optional[str] = None) -> Optional[Dict]:
         """Calculate summary metrics for a specific shift"""
         
         # Use helper to filter production runs
         queryset = filter_production_runs(shift_date, production_line, shift_type)
+        
+        # Check if there are any production runs in the date range
+        if not queryset.exists():
+            return None
         
         # Calculate weighted avg syrup yield based on production pack proportion for each run
         weighted_avg_syrup_yield = ProductionCalculationService.calculate_weighted_avg_syrup_yield(queryset)
@@ -64,7 +68,7 @@ class ProductionCalculationService:
         return summary
     
     @staticmethod
-    def calculate_daily_summary(target_date: date, production_line: Optional[ProductionLine] = None) -> Dict:
+    def calculate_daily_summary(target_date: date, production_line: Optional[ProductionLine] = None) -> Optional[Dict]:
         """Calculate daily production summary across all shifts"""
         
         queryset = ProductionRun.objects.filter(date=target_date)
@@ -72,6 +76,10 @@ class ProductionCalculationService:
         if production_line:
             queryset = queryset.filter(production_line=production_line)
         
+        # Check if there are any production runs in the date range
+        if not queryset.exists():
+            return None
+
         # Get summary by shifts
         shift_summaries = {}
         for run in queryset:
@@ -114,6 +122,8 @@ class ProductionCalculationService:
             'daily_totals': daily_totals,
             'production_line': production_line
         }
+    
+
     
     @staticmethod
     def calculate_weekly_summary(week_start_date: date, production_line: Optional[ProductionLine] = None) -> Optional[Dict]:

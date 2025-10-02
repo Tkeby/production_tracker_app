@@ -44,16 +44,15 @@
                         {{ form.shift_type }}
                     </div>
                     <div class="form-control md:col-span-3">
-                        <div class="flex gap-4">
+                        <div class="flex gap-4 justify-between">
                             <button type="submit" class="btn btn-primary">Generate Report</button>
                             {% if summary %}
-                                <a href="{% url 'reports:shift_summary_pdf' %}?{{ request.GET.urlencode }}" 
-                                   class="btn btn-outline btn-secondary">
+                                <div role="button" type="submit" class="btn btn-secondary">Download PDF
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
-                                    Download PDF
-                                </a>
+                                    <a href="{% url 'reports:shift_summary_pdf' %}?{{ request.GET.urlencode }}"></a>
+                                </div>
                             {% endif %}
                         </div>
                     </div>
@@ -62,226 +61,226 @@
         </div>
  
         {% if summary %}
-        <!-- Summary Metrics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <div class="card bg-blue-50 border border-blue-200">
-                <div class="card-body">
-                    {% if summary.production_by_line %}
-                        <!-- Production breakdown by line when "All Lines" selected -->
-                        <div class="text-center mb-3">
-                            <div class="text-sm text-blue-800 font-semibold">Production by Line (packs)</div>
-                        </div>
-                        <!-- Horizontal layout for production lines with colors -->
-                        <div class="grid grid-cols-2 gap-2 mb-3">
-                            {% for line_data in summary.production_by_line %}
-                                {% if line_data.production_line__name == 'Line A' %}
-                                    <div class="bg-emerald-100 border border-emerald-300 rounded-lg px-2 py-2">
-                                        <div class="text-center">
-                                            <div class="text-lg font-bold text-emerald-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
-                                            <div class="text-xs font-medium text-emerald-600">{{ line_data.production_line__name }}</div>
+            <!-- Summary Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="card bg-blue-50 border border-blue-200">
+                    <div class="card-body">
+                        {% if summary.production_by_line %}
+                            <!-- Production breakdown by line when "All Lines" selected -->
+                            <div class="text-center mb-3">
+                                <div class="text-sm text-blue-800 font-semibold">Production by Line (packs)</div>
+                            </div>
+                            <!-- Horizontal layout for production lines with colors -->
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                {% for line_data in summary.production_by_line %}
+                                    {% if line_data.production_line__name == 'Line A' %}
+                                        <div class="bg-emerald-100 border border-emerald-300 rounded-lg px-2 py-2">
+                                            <div class="text-center">
+                                                <div class="text-lg font-bold text-emerald-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                                <div class="text-xs font-medium text-emerald-600">{{ line_data.production_line__name }}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                {% elif line_data.production_line__name == 'Line B' %}
-                                    <div class="bg-violet-100 border border-violet-300 rounded-lg px-2 py-2">
-                                        <div class="text-center">
-                                            <div class="text-lg font-bold text-violet-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
-                                            <div class="text-xs font-medium text-violet-600">{{ line_data.production_line__name }}</div>
+                                    {% elif line_data.production_line__name == 'Line B' %}
+                                        <div class="bg-violet-100 border border-violet-300 rounded-lg px-2 py-2">
+                                            <div class="text-center">
+                                                <div class="text-lg font-bold text-violet-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                                <div class="text-xs font-medium text-violet-600">{{ line_data.production_line__name }}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                {% elif line_data.production_line__name == 'Line C' %}
-                                    <div class="bg-amber-100 border border-amber-300 rounded-lg px-2 py-2">
-                                        <div class="text-center">
-                                            <div class="text-lg font-bold text-amber-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
-                                            <div class="text-xs font-medium text-amber-600">{{ line_data.production_line__name }}</div>
+                                    {% elif line_data.production_line__name == 'Line C' %}
+                                        <div class="bg-amber-100 border border-amber-300 rounded-lg px-2 py-2">
+                                            <div class="text-center">
+                                                <div class="text-lg font-bold text-amber-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                                <div class="text-xs font-medium text-amber-600">{{ line_data.production_line__name }}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                {% elif line_data.production_line__name == 'Line CAN' %}
-                                    <div class="bg-rose-100 border border-rose-300 rounded-lg px-2 py-2">
-                                        <div class="text-center">
-                                            <div class="text-lg font-bold text-rose-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
-                                            <div class="text-xs font-medium text-rose-600">{{ line_data.production_line__name }}</div>
+                                    {% elif line_data.production_line__name == 'Line CAN' %}
+                                        <div class="bg-rose-100 border border-rose-300 rounded-lg px-2 py-2">
+                                            <div class="text-center">
+                                                <div class="text-lg font-bold text-rose-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                                <div class="text-xs font-medium text-rose-600">{{ line_data.production_line__name }}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                {% else %}
-                                    <!-- Fallback for other lines -->
-                                    <div class="bg-gray-100 border border-gray-300 rounded-lg px-2 py-2">
-                                        <div class="text-center">
-                                            <div class="text-lg font-bold text-gray-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
-                                            <div class="text-xs font-medium text-gray-600">{{ line_data.production_line__name }}</div>
+                                    {% else %}
+                                        <!-- Fallback for other lines -->
+                                        <div class="bg-gray-100 border border-gray-300 rounded-lg px-2 py-2">
+                                            <div class="text-center">
+                                                <div class="text-lg font-bold text-gray-700">{{ line_data.line_production|floatformat:0|intcomma }}</div>
+                                                <div class="text-xs font-medium text-gray-600">{{ line_data.production_line__name }}</div>
+                                            </div>
                                         </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="pt-3 border-t border-blue-200">
+                                <div class="text-center">
+                                    <div class="text-sm font-semibold text-blue-800">Total: 
+                                        <span class="text-xl font-bold text-blue-600">{{ summary.total_production|floatformat:0|intcomma }}</span>
                                     </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                        <div class="pt-3 border-t border-blue-200">
-                            <div class="text-center">
-                                <div class="text-sm font-semibold text-blue-800">Total: 
-                                    <span class="text-xl font-bold text-blue-600">{{ summary.total_production|floatformat:0|intcomma }}</span>
                                 </div>
                             </div>
+                        {% else %}
+                            <!-- Single line production display -->
+                            <!-- <div class="text-center flex flex-col justify-center items-center">
+                                <div class="text-3xl font-bold text-blue-600">
+                                    {{ summary.total_production|floatformat:0|intcomma }}
+                                </div>
+                                <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
+                            </div> -->
+                            
+                            <div class="card-body text-center flex flex-col justify-center">
+                                <div class="text-3xl font-bold text-blue-600">
+                                    {{ summary.total_production|floatformat:0|intcomma }}
+                                </div>
+                                <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
+                            </div>
+                            
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card bg-green-50 border border-green-200">
+                    <div class="card-body text-center flex flex-col justify-center">
+                        <div class="text-3xl font-bold text-green-600">
+                            {{ summary.avg_oee|floatformat:1|default:"0" }}%
                         </div>
+                        <div class="text-sm text-green-800 font-semibold">Average OEE</div>
+                    </div>
+                </div>
+                <div class="card bg-green-50 border border-green-200">
+                    <div class="card-body text-center flex flex-col justify-center">
+                        <div class="text-3xl font-bold text-green-600">
+                            {{ summary.avg_syrup_yield|floatformat:1|default:"0" }}%
+                        </div>
+                        <div class="text-sm text-green-800 font-semibold">Average Syrup Yield</div>
+                    </div>
+                </div>
+                <div class="card bg-orange-50 border border-orange-200">
+                    <div class="card-body text-center flex flex-col justify-center">
+                        <div class="text-sm text-center font-semibold mb-3">
+                            <span class="text-orange-600">Downtime Analysis</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-center">
+                            <div>
+                                <div class="text-lg font-bold text-red-600">
+                                    {{ summary.total_unplanned_downtime|floatformat:0|default:"0" }}
+                                </div>
+                                <div class="text-xs text-red-700 font-medium">Unplanned</div>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-blue-600">
+                                    {{ summary.total_planned_downtime|floatformat:0|default:"0" }}
+                                </div>
+                                <div class="text-xs text-blue-700 font-medium">Planned</div>
+                            </div>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-orange-200">
+                            <div class="text-xs text-orange-800 font-medium">
+                                Total: {% widthratio summary.total_unplanned_downtime|default:0 1 1 as unplanned %}{% widthratio summary.total_planned_downtime|default:0 1 1 as planned %}{{ unplanned|add:planned }} minutes
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Production Runs Details -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <div class="flex items-center justify-between">
+                        <h3 class="card-title text-xl mb-4">Production Runs <span>({{selected_line.name|default:"All Lines"}}) </span> </h3>
+
+                        <span class="text-sm text-gray-500 mb-4">Date: {{ shift_date }}</span>
+                    </div>
+                    {% if summary.runs %}
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra w-full">
+                            <thead>
+                                <tr>
+                                    <!-- <th>Batch Number</th> -->
+                                    <th>Line</th>
+                                    <th>Product</th>
+                                    <th>Production</th> 
+                                    <th>Syrup Yield</th>
+                                    <th>Downtime</th>
+                                    <th>OEE</th>
+                                    <!-- <th>Status</th> -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for run in summary.runs %}
+                                <tr class="text-left">
+                                    <!-- <td class="font-mono text-sm">
+                                    
+                                        <a href="#" class="link link-primary">{{ run.production_batch_number|slice:":10" }}...</a>
+                                    
+                                        <div class="tooltip tooltip-bottom" data-tip="{{ run.production_batch_number }}">
+                                            <a href="#" class="link link-primary">{{ run.production_batch_number|slice:":10" }}...</a>
+                                        </div>
+                                
+                                    </td> -->
+                                    <td>
+                                        <div class="font-semibold">{{ run.production_line.name }}</div>
+                                        <div class="text-xs text-gray-500">{{ run.production_line.rated_speed | floatformat:0|intcomma }} <span class="text-xs text-gray-500">bph</span></div>
+                                    </td>
+                                    <td>
+                                        <div class="font-semibold">{{ run.product.name }}</div>
+                                        <div class="text-xs text-gray-500">{{ run.package_size }}</div>
+                                    </td>
+                                    
+                                    <td >
+                                        <div class="font-bold">{{ run.good_products_pack|floatformat:0|intcomma }}</div>
+                                        <div class="text-xs text-gray-500">packs</div>
+                                    </td>
+                                    <td >
+                                        <div class="font-bold {% if run.report.syrup_yield_percentage > 95 %}text-green-600 
+                                            {% elif run.report.syrup_yield_percentage > 90 %}text-yellow-600 
+                                            {% else %}text-red-600{% endif %}">{{ run.report.syrup_yield_percentage|floatformat:1 }}%</div>
+                                        <!-- <div class="font-bold">{{ run.report.syrup_yield_percentage|floatformat:1 }}%</div> -->
+                                    </td>
+                                    <td >
+                                        <div class="font-bold {% if run.total_downtime_minutes > 60 %}text-red-600{% else %}text-green-600{% endif %}">
+                                            {{ run.total_downtime_minutes }}
+                                        </div>
+                                        <div class="text-xs text-gray-500">min</div>
+                                    </td>
+                                    <td>
+                                        <div class="font-bold">{{ run.report.oee|floatformat:1 }}%</div>
+                                        <!-- <div class="text-xs text-gray-500">%</div> -->
+                                    </td>
+                                    <!-- <td>
+                                        <span class="badge {% if run.is_completed %}badge-success{% else %}badge-warning{% endif %}">
+                                            {% if run.is_completed %}Completed{% else %}In Progress{% endif %}
+                                        </span>
+                                    </td> -->
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                     {% else %}
-                        <!-- Single line production display -->
-                        <!-- <div class="text-center flex flex-col justify-center items-center">
-                            <div class="text-3xl font-bold text-blue-600">
-                                {{ summary.total_production|floatformat:0|intcomma }}
-                            </div>
-                            <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
-                        </div> -->
-                        
-                        <div class="card-body text-center flex flex-col justify-center">
-                            <div class="text-3xl font-bold text-blue-600">
-                                {{ summary.total_production|floatformat:0|intcomma }}
-                            </div>
-                            <div class="text-sm text-blue-800 font-semibold">Total Production (packs)</div>
-                        </div>
-                        
+                    <div class="text-center text-gray-500 py-16">
+                        No production runs found for the selected criteria.
+                    </div>
                     {% endif %}
                 </div>
             </div>
-            <div class="card bg-green-50 border border-green-200">
-                <div class="card-body text-center flex flex-col justify-center">
-                    <div class="text-3xl font-bold text-green-600">
-                        {{ summary.avg_oee|floatformat:1|default:"0" }}%
-                    </div>
-                    <div class="text-sm text-green-800 font-semibold">Average OEE</div>
-                </div>
-            </div>
-            <div class="card bg-green-50 border border-green-200">
-                <div class="card-body text-center flex flex-col justify-center">
-                    <div class="text-3xl font-bold text-green-600">
-                        {{ summary.avg_syrup_yield|floatformat:1|default:"0" }}%
-                    </div>
-                    <div class="text-sm text-green-800 font-semibold">Average Syrup Yield</div>
-                </div>
-            </div>
-            <div class="card bg-orange-50 border border-orange-200">
-                <div class="card-body text-center flex flex-col justify-center">
-                    <div class="text-sm text-center font-semibold mb-3">
-                        <span class="text-orange-600">Downtime Analysis</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-center">
-                        <div>
-                            <div class="text-lg font-bold text-red-600">
-                                {{ summary.total_unplanned_downtime|floatformat:0|default:"0" }}
-                            </div>
-                            <div class="text-xs text-red-700 font-medium">Unplanned</div>
-                        </div>
-                        <div>
-                            <div class="text-lg font-bold text-blue-600">
-                                {{ summary.total_planned_downtime|floatformat:0|default:"0" }}
-                            </div>
-                            <div class="text-xs text-blue-700 font-medium">Planned</div>
-                        </div>
-                    </div>
-                    <div class="mt-2 pt-2 border-t border-orange-200">
-                        <div class="text-xs text-orange-800 font-medium">
-                            Total: {% widthratio summary.total_unplanned_downtime|default:0 1 1 as unplanned %}{% widthratio summary.total_planned_downtime|default:0 1 1 as planned %}{{ unplanned|add:planned }} minutes
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Production Runs Details -->
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <div class="flex items-center justify-between">
-                    <h3 class="card-title text-xl mb-4">Production Runs <span>({{selected_line.name|default:"All Lines"}}) </span> </h3>
-
-                    <span class="text-sm text-gray-500 mb-4">Date: {{ shift_date }}</span>
-                </div>
-                {% if summary.runs %}
-                <div class="overflow-x-auto">
-                    <table class="table table-zebra w-full">
-                        <thead>
-                            <tr>
-                                <!-- <th>Batch Number</th> -->
-                                <th>Line</th>
-                                <th>Product</th>
-                                <th>Production</th> 
-                                <th>Syrup Yield</th>
-                                <th>Downtime</th>
-                                <th>OEE</th>
-                                <!-- <th>Status</th> -->
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for run in summary.runs %}
-                            <tr class="text-left">
-                                <!-- <td class="font-mono text-sm">
-                                   
-                                    <a href="#" class="link link-primary">{{ run.production_batch_number|slice:":10" }}...</a>
-                                   
-                                    <div class="tooltip tooltip-bottom" data-tip="{{ run.production_batch_number }}">
-                                        <a href="#" class="link link-primary">{{ run.production_batch_number|slice:":10" }}...</a>
-                                    </div>
-                               
-                                </td> -->
-                                <td>
-                                    <div class="font-semibold">{{ run.production_line.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ run.production_line.rated_speed | floatformat:0|intcomma }} <span class="text-xs text-gray-500">bph</span></div>
-                                </td>
-                                <td>
-                                    <div class="font-semibold">{{ run.product.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ run.package_size }}</div>
-                                </td>
-                                
-                                <td >
-                                    <div class="font-bold">{{ run.good_products_pack|floatformat:0|intcomma }}</div>
-                                    <div class="text-xs text-gray-500">packs</div>
-                                </td>
-                                <td >
-                                    <div class="font-bold {% if run.report.syrup_yield_percentage > 95 %}text-green-600 
-                                        {% elif run.report.syrup_yield_percentage > 90 %}text-yellow-600 
-                                        {% else %}text-red-600{% endif %}">{{ run.report.syrup_yield_percentage|floatformat:1 }}%</div>
-                                    <!-- <div class="font-bold">{{ run.report.syrup_yield_percentage|floatformat:1 }}%</div> -->
-                                </td>
-                                <td >
-                                    <div class="font-bold {% if run.total_downtime_minutes > 60 %}text-red-600{% else %}text-green-600{% endif %}">
-                                        {{ run.total_downtime_minutes }}
-                                    </div>
-                                    <div class="text-xs text-gray-500">min</div>
-                                </td>
-                                <td>
-                                    <div class="font-bold">{{ run.report.oee|floatformat:1 }}%</div>
-                                    <!-- <div class="text-xs text-gray-500">%</div> -->
-                                </td>
-                                <!-- <td>
-                                    <span class="badge {% if run.is_completed %}badge-success{% else %}badge-warning{% endif %}">
-                                        {% if run.is_completed %}Completed{% else %}In Progress{% endif %}
-                                    </span>
-                                </td> -->
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center text-gray-500 py-16">
-                    No production runs found for the selected criteria.
-                </div>
-                {% endif %}
-            </div>
-        </div>
         {% else %}
-        <!-- No Data State -->
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body text-center justify-center items-center py-16">
-                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                    </svg>
-                </div>
-                <h3 class="text-2xl font-bold mb-2">No Data Available</h3>
-                <p class="text-gray-600 mb-6">Please select your filter criteria and click "Generate Report" to view shift summary data.</p>
-                <div class="flex flex-wrap justify-center gap-2">
-                    <span class="badge badge-outline">Select shift date</span>
-                    <span class="badge badge-outline">Choose production line (optional)</span>
-                    <span class="badge badge-outline">Pick shift type (optional)</span>
+            <!-- No Data State -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body text-center justify-center items-center py-16">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">No Data Available</h3>
+                    <p class="text-gray-600 mb-6">Please select your filter criteria and click "Generate Report" to view shift summary data.</p>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <span class="badge badge-outline">Select shift date</span>
+                        <span class="badge badge-outline">Choose production line (optional)</span>
+                        <span class="badge badge-outline">Pick shift type (optional)</span>
+                    </div>
                 </div>
             </div>
-        </div>
         {% endif %}
 
     </div>

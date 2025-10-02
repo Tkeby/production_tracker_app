@@ -47,7 +47,7 @@
                         <div>
                             <h2 class="text-lg font-semibold opacity-90">Today's Production</h2>
                             <p class="text-3xl font-bold">
-                                {{ today_summary.daily_totals.total_production|floatformat:0|default:"0" }}
+                                {% if today_summary %}{{ today_summary.daily_totals.total_production|floatformat:0|default:"0" }}{% else %}0{% endif %}
                             </p>
                             <p class="text-sm opacity-80">Good Products (packs)</p>
                         </div>
@@ -63,7 +63,7 @@
                         <div>
                             <h2 class="text-lg font-semibold opacity-90">Average OEE</h2>
                             <p class="text-3xl font-bold">
-                                {{ today_summary.daily_totals.avg_oee|floatformat:1|default:"0" }}%
+                                {% if today_summary %}{{ today_summary.daily_totals.avg_oee|floatformat:1|default:"0" }}{% else %}0{% endif %}%
                             </p>
                             <p class="text-sm opacity-80">Overall Equipment Effectiveness</p>
                         </div>
@@ -79,7 +79,7 @@
                         <div>
                             <h2 class="text-lg font-semibold opacity-90">Today's Downtime</h2>
                             <p class="text-3xl font-bold">
-                                {{ today_summary.daily_totals.total_downtime|floatformat:0|default:"0" }}
+                                {% if today_summary %}{{ today_summary.daily_totals.total_downtime|floatformat:0|default:"0" }}{% else %}0{% endif %}
                             </p>
                             <p class="text-sm opacity-80">Minutes</p>
                         </div>
@@ -95,7 +95,7 @@
                         <div>
                             <h2 class="text-lg font-semibold opacity-90">Production Runs</h2>
                             <p class="text-3xl font-bold">
-                                {{ today_summary.daily_totals.total_runs|default:"0" }}
+                                {% if today_summary %}{{ today_summary.daily_totals.total_runs|default:"0" }}{% else %}0{% endif %}
                             </p>
                             <p class="text-sm opacity-80">Today</p>
                         </div>
