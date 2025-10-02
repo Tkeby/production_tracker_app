@@ -3,16 +3,14 @@ from django.views.generic import TemplateView
 from django.views import View
 from django.shortcuts import redirect
 from django.http import JsonResponse, HttpResponse
-from django.utils import timezone
+
 from django.contrib import messages
-from django.db.models import Q
+
 from datetime import date, timedelta
-import json
 
-from .pdf_generators import WeeklyReportPDFGenerator
-import io
+from .pdf_generators import ReportPDFGenerator
 
-from manufacturing.models import ProductionLine, ProductionRun, Machine
+from manufacturing.models import ProductionLine, Machine
 from .services import ProductionCalculationService
 from .mixins import ReportsPermissionMixin, DetailedReportsPermissionMixin
 from .forms import (
@@ -297,45 +295,6 @@ class MachineUtilizationView(DetailedReportsPermissionMixin, TemplateView):
         
         return context
 
-
-class WeeklySummaryPDFView(ReportsPermissionMixin, View):
-    """Generate PDF version of weekly summary"""
-    
-    def get(self, request, *args, **kwargs):
-        # Reuse the same logic from WeeklySummaryView
-        form = WeeklySummaryForm(request.GET or None)
-        
-        if not form.is_valid():
-            messages.error(request, "Please provide valid filter parameters")
-            return redirect('reports:weekly_summary')
-        
-        # Get the same context data
-        week_start_date = form.cleaned_data['week_start_date']
-        production_line = form.cleaned_data['production_line']
-        week_end_date = week_start_date + timedelta(days=6)
-        
-        context = {
-            'summary': ProductionCalculationService.calculate_weekly_summary(
-                week_start_date, production_line
-            ),
-            'product_trend': ProductionCalculationService.calculate_product_trend(
-                week_start_date, week_end_date, production_line
-            ),
-            'product_summary': ProductionCalculationService.calculate_product_summary_by_line_product_package(
-                week_start_date, week_end_date, production_line
-            ),
-            'form': form,
-        }
-        
-        # Generate PDF with fallback support
-        pdf_bytes = WeeklyReportPDFGenerator.generate_weekly_pdf_with_fallback(context)
-        
-        # Return PDF response
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        filename = f"weekly_report_{week_start_date.strftime('%Y%m%d')}.pdf"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        return response
 
 # HTMX Views for dynamic content
 def production_alerts_htmx(request):

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Summary Report - PDF</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { print-color-adjust: exact; }
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+        }
+        .pdf-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .pdf-header {
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .pdf-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 0;
+        }
+        .pdf-subtitle {
+            font-size: 16px;
+            color: #64748b;
+            margin: 8px 0 0 0;
+        }
+        .pdf-date-info {
+            font-size: 14px;
+            color: #475569;
+            margin-top: 12px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid;
+        }
+        .metric-card.production {
+            background-color: #eff6ff;
+            border-color: #bfdbfe;
+        }
+        .metric-card.oee {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+        .metric-card.yield {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+        .metric-card.downtime {
+            background-color: #fff7ed;
+            border-color: #fed7aa;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .metric-label {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .production-lines {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .line-item {
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border: 2px solid;
+        }
+        .line-item.line-a {
+            background-color: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+        .line-item.line-b {
+            background-color: #f3e8ff;
+            border-color: #c4b5fd;
+        }
+        .line-item.line-c {
+            background-color: #fefce8;
+            border-color: #fde047;
+        }
+        .line-item.line-can {
+            background-color: #fdf2f8;
+            border-color: #fbb6ce;
+        }
+        .line-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .line-name {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .total-production {
+            border-top: 2px solid #bfdbfe;
+            padding-top: 12px;
+            margin-top: 12px;
+            text-align: center;
+        }
+        .downtime-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            text-align: center;
+        }
+        .downtime-item {
+            padding: 8px;
+        }
+        .downtime-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .downtime-label {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .runs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .runs-table th,
+        .runs-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .runs-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+        .runs-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .color-green { color: #059669; }
+        .color-yellow { color: #d97706; }
+        .color-red { color: #dc2626; }
+        .color-blue { color: #2563eb; }
+        .color-emerald { color: #059669; }
+        .color-violet { color: #7c3aed; }
+        .color-amber { color: #d97706; }
+        .color-rose { color: #e11d48; }
+        .text-sm { font-size: 14px; }
+        .text-xs { font-size: 12px; }
+        .font-bold { font-weight: bold; }
+        .font-semibold { font-weight: 600; }
+        .font-mono { font-family: 'Courier New', monospace; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        .no-data-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .no-data-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .no-data-text {
+            font-size: 16px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="pdf-container">
+        <!-- Header -->
+        <div class="pdf-header">
+            <h1 class="pdf-title">Shift Summary Report</h1>
+            <p class="pdf-subtitle">Production performance summary by shift</p>
+            {% if shift_date %}
+            <div class="pdf-date-info">
+                <strong>Date:</strong> {{ shift_date }} | 
+                <strong>Line:</strong> {{ selected_line.name|default:"All Lines" }} | 
+                <strong>Shift:</strong> {{ selected_shift|default:"All Shifts" }}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if summary %}
+        <!-- Summary Metrics -->
+        <div class="metrics-grid">
+            <!-- Production Card -->
+            <div class="metric-card production">
+                {% if summary.production_by_line %}
+                    <!-- Production breakdown by line when "All Lines" selected -->
+                    <div class="text-sm font-semibold color-blue margin-bottom: 12px;">Production by Line (packs)</div>
+                    
+                    <!-- Production lines grid -->
+                    <div class="production-lines">
+                        {% for line_data in summary.production_by_line %}
+                            {% if line_data.production_line__name == 'Line A' %}
+                                <div class="line-item line-a">
+                                    <div class="line-value color-emerald">{{ line_data.line_production|floatformat:0 }}</div>
+                                    <div class="line-name color-emerald">{{ line_data.production_line__name }}</div>
+                                </div>
+                            {% elif line_data.production_line__name == 'Line B' %}
+                                <div class="line-item line-b">
+                                    <div class="line-value color-violet">{{ line_data.line_production|floatformat:0 }}</div>
+                                    <div class="line-name color-violet">{{ line_data.production_line__name }}</div>
+                                </div>
+                            {% elif line_data.production_line__name == 'Line C' %}
+                                <div class="line-item line-c">
+                                    <div class="line-value color-amber">{{ line_data.line_production|floatformat:0 }}</div>
+                                    <div class="line-name color-amber">{{ line_data.production_line__name }}</div>
+                                </div>
+                            {% elif line_data.production_line__name == 'Line CAN' %}
+                                <div class="line-item line-can">
+                                    <div class="line-value color-rose">{{ line_data.line_production|floatformat:0 }}</div>
+                                    <div class="line-name color-rose">{{ line_data.production_line__name }}</div>
+                                </div>
+                            {% else %}
+                                <div class="line-item">
+                                    <div class="line-value">{{ line_data.line_production|floatformat:0 }}</div>
+                                    <div class="line-name">{{ line_data.production_line__name }}</div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="total-production">
+                        <div class="text-sm font-semibold color-blue">Total: 
+                            <span class="metric-value color-blue" style="font-size: 24px;">{{ summary.total_production|floatformat:0 }}</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Single line production display -->
+                    <div class="metric-value color-blue">{{ summary.total_production|floatformat:0 }}</div>
+                    <div class="metric-label color-blue">Total Production (packs)</div>
+                {% endif %}
+            </div>
+
+            <!-- OEE Card -->
+            <div class="metric-card oee">
+                <div class="metric-value color-green">{{ summary.avg_oee|floatformat:1|default:"0" }}%</div>
+                <div class="metric-label color-green">Average OEE</div>
+            </div>
+
+            <!-- Syrup Yield Card -->
+            <div class="metric-card yield">
+                <div class="metric-value color-green">{{ summary.avg_syrup_yield|floatformat:1|default:"0" }}%</div>
+                <div class="metric-label color-green">Average Syrup Yield</div>
+            </div>
+
+            <!-- Downtime Card -->
+            <div class="metric-card downtime">
+                <div class="text-sm font-semibold" style="margin-bottom: 12px; color: #ea580c;">Downtime Analysis</div>
+                <div class="downtime-grid">
+                    <div class="downtime-item">
+                        <div class="downtime-value color-red">{{ summary.total_unplanned_downtime|floatformat:0|default:"0" }}</div>
+                        <div class="downtime-label color-red">Unplanned</div>
+                    </div>
+                    <div class="downtime-item">
+                        <div class="downtime-value color-blue">{{ summary.total_planned_downtime|floatformat:0|default:"0" }}</div>
+                        <div class="downtime-label color-blue">Planned</div>
+                    </div>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #fed7aa;">
+                    <div class="text-xs font-semibold" style="color: #ea580c;">
+                        Total: {% widthratio summary.total_unplanned_downtime|default:0 1 1 as unplanned %}{% widthratio summary.total_planned_downtime|default:0 1 1 as planned %}{{ unplanned|add:planned }} minutes
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Runs Details -->
+        <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="font-size: 20px; font-weight: bold; margin: 0;">Production Runs ({{selected_line.name|default:"All Lines"}})</h3>
+                <span class="text-sm text-gray-500">Date: {{ shift_date }}</span>
+            </div>
+            
+            {% if summary.runs %}
+            <table class="runs-table">
+                <thead>
+                    <tr>
+                        <th>Line</th>
+                        <th>Product</th>
+                        <th>Production</th>
+                        <th>Syrup Yield</th>
+                        <th>Downtime</th>
+                        <th>OEE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in summary.runs %}
+                    <tr>
+                        <td>
+                            <div class="font-semibold">{{ run.production_line.name }}</div>
+                            <div class="text-xs text-gray-500">{{ run.production_line.rated_speed|floatformat:0 }} <span class="text-xs text-gray-500">bph</span></div>
+                        </td>
+                        <td>
+                            <div class="font-semibold">{{ run.product.name }}</div>
+                            <div class="text-xs text-gray-500">{{ run.package_size }}</div>
+                        </td>
+                        <td>
+                            <div class="font-bold">{{ run.good_products_pack|floatformat:0 }}</div>
+                            <div class="text-xs text-gray-500">packs</div>
+                        </td>
+                        <td>
+                            <div class="font-bold {% if run.report.syrup_yield_percentage > 95 %}color-green{% elif run.report.syrup_yield_percentage > 90 %}color-yellow{% else %}color-red{% endif %}">
+                                {{ run.report.syrup_yield_percentage|floatformat:1 }}%
+                            </div>
+                        </td>
+                        <td>
+                            <div class="font-bold {% if run.total_downtime_minutes > 60 %}color-red{% else %}color-green{% endif %}">
+                                {{ run.total_downtime_minutes }}
+                            </div>
+                            <div class="text-xs text-gray-500">min</div>
+                        </td>
+                        <td>
+                            <div class="font-bold">{{ run.report.oee|floatformat:1 }}%</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <div class="no-data-icon">📊</div>
+                <div class="no-data-title">No Production Runs</div>
+                <div class="no-data-text">No production runs found for the selected criteria.</div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- No Data State -->
+        <div class="no-data">
+            <div class="no-data-icon">📊</div>
+            <div class="no-data-title">No Data Available</div>
+            <div class="no-data-text">Please ensure filter criteria are properly set to view shift summary data.</div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

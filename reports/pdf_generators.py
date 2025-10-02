@@ -19,7 +19,7 @@ except ImportError:
     WEASYPRINT_AVAILABLE = False
     logger.warning("WeasyPrint not available - PDF fallback disabled")
 
-class WeeklyReportPDFGenerator:
+class ReportPDFGenerator:
     @staticmethod
     async def generate_pdf_from_html(html_content: str, css_files: list = None) -> bytes:
         async with async_playwright() as p:

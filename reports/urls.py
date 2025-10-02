@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
 
+from . import pdf_views
+
+
 app_name = 'reports'
 
 urlpatterns = [
@@ -12,14 +15,15 @@ urlpatterns = [
     path('daily-summary/', views.DailySummaryView.as_view(), name='daily_summary'),
     path('weekly-summary/', views.WeeklySummaryView.as_view(), name='weekly_summary'),
     
+    # PDF Reports
+    path('shift-summary/pdf/', pdf_views.ShiftSummaryPDFView.as_view(), name='shift_summary_pdf'),
+    path('weekly-summary/pdf/', pdf_views.WeeklySummaryPDFView.as_view(), name='weekly_summary_pdf'),
+    
     # Analysis Reports
     path('efficiency-report/', views.ProductionEfficiencyReportView.as_view(), name='efficiency_report'),
     path('oee-trend/', views.OEETrendView.as_view(), name='oee_trend'),
     path('downtime-analysis/', views.DowntimeAnalysisView.as_view(), name='downtime_analysis'),
     path('machine-utilization/', views.MachineUtilizationView.as_view(), name='machine_utilization'),
-
-    # weekly summary pdf
-    path('weekly-summary/pdf/', views.WeeklySummaryPDFView.as_view(), name='weekly_summary_pdf'),
    
     # HTMX endpoints for dynamic content
     path('htmx/alerts/', views.production_alerts_htmx, name='alerts_htmx'),
