@@ -15,13 +15,7 @@
 
 {% block main_content %}
 <div class="max-w-7xl mx-auto">
-    <!-- Action Header -->
-    <div class="flex justify-end items-center mb-8">
-        <a href="{% url 'reports:efficiency_report' %}" class="btn btn-primary">
-            📊 Full Efficiency Report
-        </a>
-    </div>
-
+   
         <!-- Production Alerts -->
         {% if alerts %}
         <div class="alert alert-warning shadow-lg mb-8">
@@ -111,65 +105,18 @@
             </div>
         </div>
 
-        <!-- Charts and Analysis Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- OEE Trend Chart -->
-            <div class="card bg-base-100 shadow-xl">
-                <div class="card-body">
-                    <h3 class="card-title text-xl mb-4">OEE Trend (Last 7 Days)</h3>
-                    {% if oee_trend %}
-                    <div class="h-64">
-                        <canvas id="oeeChart"></canvas>
-                    </div>
-                    {% else %}
-                    <div class="text-center text-gray-500 py-16">
-                        No OEE data available for the last 7 days
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Top Downtime Reasons -->
-            <div class="card bg-base-100 shadow-xl">
-                <div class="card-body">
-                    <h3 class="card-title text-xl mb-4">Top Downtime Reasons</h3>
-                    {% if top_downtime %}
-                    <div class="space-y-3">
-                        {% for reason in top_downtime %}
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div class="flex-1">
-                                <div class="font-semibold">{{ reason.code }} - {{ reason.code__reason }}</div>
-                                <!-- <div class="text-sm text-gray-600">{{ reason.code__reason|default:"No description" }}</div> -->
-                            </div>
-                            <div class="text-right">
-                                <div class="font-bold text-lg">{{ reason.total_duration }} min</div>
-                                <div class="text-xs text-gray-500">{{ reason.occurrence_count }} times</div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center text-gray-500 py-16">
-                        No downtime data available
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+     
 
         <!-- Quick Reports Access -->
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
                 <h3 class="card-title text-xl mb-6">Quick Reports</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <a href="{% url 'reports:shift_summary' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
-                        <div class="text-2xl mb-2">🔄</div>
-                        <div class="text-sm font-semibold">Shift Summary</div>
-                    </a>
                     <a href="{% url 'reports:daily_summary' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
-                        <div class="text-2xl mb-2">📅</div>
+                        <div class="text-2xl mb-2">🔄</div>
                         <div class="text-sm font-semibold">Daily Summary</div>
                     </a>
+                    
                     <a href="{% url 'reports:weekly_summary' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
                         <div class="text-2xl mb-2">📊</div>
                         <div class="text-sm font-semibold">Weekly Summary</div>
@@ -178,22 +125,16 @@
                         <div class="text-2xl mb-2">📈</div>
                         <div class="text-sm font-semibold">OEE Analysis</div>
                     </a>
-                    <a href="{% url 'reports:downtime_analysis' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
-                        <div class="text-2xl mb-2">⏰</div>
-                        <div class="text-sm font-semibold">Downtime Analysis</div>
-                    </a>
+                    
                     <a href="{% url 'reports:machine_utilization' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
                         <div class="text-2xl mb-2">⚙️</div>
                         <div class="text-sm font-semibold">Machine Utilization</div>
                     </a>
-                    <a href="{% url 'reports:efficiency_report' %}" class="btn btn-outline btn-lg h-auto flex-col py-4">
-                        <div class="text-2xl mb-2">📋</div>
-                        <div class="text-sm font-semibold">Full Report</div>
-                    </a>
-                    <div class="btn btn-outline btn-lg h-auto flex-col py-4 btn-disabled">
+                    
+                    <!-- <div class="btn btn-outline btn-lg h-auto flex-col py-4 btn-disabled">
                         <div class="text-2xl mb-2">📤</div>
                         <div class="text-sm font-semibold">Export Data</div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -244,52 +185,4 @@
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// OEE Chart
-{% if oee_trend %}
-const ctx = document.getElementById('oeeChart').getContext('2d');
-const oeeChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: [
-            {% for item in oee_trend %}
-                '{{ item.production_run__date|date:"M d" }}'{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ],
-        datasets: [{
-            label: 'OEE %',
-            data: [
-                {% for item in oee_trend %}
-                    {{ item.avg_oee|floatformat:1|default:"0" }}{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ],
-            borderColor: 'rgb(59, 130, 246)',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            tension: 0.1,
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true,
-                max: 100,
-                ticks: {
-                    callback: function(value) {
-                        return value + '%';
-                    }
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                display: false
-            }
-        }
-    }
-});
-{% endif %}
-</script>
 {% endblock %}

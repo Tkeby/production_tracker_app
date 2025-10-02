@@ -13,7 +13,7 @@ from .pdf_generators import ReportPDFGenerator
 from .services import ProductionCalculationService
 from .mixins import ReportsPermissionMixin
 from .forms import (
-    ShiftSummaryForm, WeeklySummaryForm, 
+    DailySummaryForm, WeeklySummaryForm, 
 )
 
 
@@ -33,10 +33,17 @@ class WeeklySummaryPDFView(ReportsPermissionMixin, View):
         production_line = form.cleaned_data['production_line']
         week_end_date = week_start_date + timedelta(days=6)
         
+        # Check if there's data for the date range
+        summary = ProductionCalculationService.calculate_weekly_summary(
+            week_start_date, production_line
+        )
+        
+        if not summary:
+            messages.error(request, "No production data found for the selected date range. Cannot generate PDF report.")
+            return redirect('reports:weekly_summary')
+        
         context = {
-            'summary': ProductionCalculationService.calculate_weekly_summary(
-                week_start_date, production_line
-            ),
+            'summary': summary,
             'product_trend': ProductionCalculationService.calculate_product_trend(
                 week_start_date, week_end_date, production_line
             ),
@@ -61,12 +68,12 @@ class ShiftSummaryPDFView(ReportsPermissionMixin, View):
     """Generate PDF version of shift summary"""
     
     def get(self, request, *args, **kwargs):
-        # Reuse the same logic from ShiftSummaryView
-        form = ShiftSummaryForm(request.GET or None)
+        # Reuse the same logic from DailySummaryView
+        form = DailySummaryForm(request.GET or None)
         
         if not form.is_valid():
             messages.error(request, "Please provide valid filter parameters")
-            return redirect('reports:shift_summary')
+            return redirect('reports:daily_summary')
         
         # Get the same context data
         shift_date = form.cleaned_data['shift_date']

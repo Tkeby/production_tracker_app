@@ -116,7 +116,7 @@ class ProductionCalculationService:
         }
     
     @staticmethod
-    def calculate_weekly_summary(week_start_date: date, production_line: Optional[ProductionLine] = None) -> Dict:
+    def calculate_weekly_summary(week_start_date: date, production_line: Optional[ProductionLine] = None) -> Optional[Dict]:
         """Calculate weekly production summary"""
         
         week_end_date = week_start_date + timedelta(days=6)
@@ -127,6 +127,10 @@ class ProductionCalculationService:
         
         if production_line:
             queryset = queryset.filter(production_line=production_line)
+        
+        # Check if there are any production runs in the date range
+        if not queryset.exists():
+            return None
         
         # Daily breakdown
         daily_summaries = {}

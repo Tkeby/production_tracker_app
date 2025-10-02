@@ -14,8 +14,8 @@ from manufacturing.models import ProductionLine, Machine
 from .services import ProductionCalculationService
 from .mixins import ReportsPermissionMixin, DetailedReportsPermissionMixin
 from .forms import (
-    ReportFilterForm, ShiftSummaryForm, DailySummaryForm, 
-    WeeklySummaryForm, DowntimeAnalysisForm, MachineUtilizationForm
+    ReportFilterForm,  DailySummaryForm, 
+    WeeklySummaryForm, MachineUtilizationForm
 )
 
 
@@ -60,12 +60,12 @@ class ReportsDashboardView(ReportsPermissionMixin, TemplateView):
         return context
 
 
-class ShiftSummaryView(ReportsPermissionMixin, TemplateView):
+class DailySummaryView(ReportsPermissionMixin, TemplateView):
     """Shift summary report view"""
-    template_name = 'reports/shift_summary.html'
+    template_name = 'reports/daily_summary.html'
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        form = ShiftSummaryForm(self.request.GET or None)
+        form = DailySummaryForm(self.request.GET or None)
         context['form'] = form
         
         if form.is_valid():
@@ -80,34 +80,6 @@ class ShiftSummaryView(ReportsPermissionMixin, TemplateView):
             context['shift_date'] = shift_date
             context['selected_line'] = production_line
             context['selected_shift'] = shift_type
-        
-        return context
-
-
-class DailySummaryView(ReportsPermissionMixin, TemplateView):
-    """Daily summary report view"""
-    template_name = 'reports/daily_summary.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        form = DailySummaryForm(self.request.GET or None)
-        context['form'] = form
-        
-        if form.is_valid():
-            target_date = form.cleaned_data['target_date']
-            production_line = form.cleaned_data['production_line']
-            
-            summary = ProductionCalculationService.calculate_daily_summary(
-                target_date, production_line
-            )
-            context['summary'] = summary
-            
-            # Add product trend for the last 7 days ending on target_date
-            start_date = target_date - timedelta(days=6)
-            product_trend = ProductionCalculationService.calculate_product_trend(
-                start_date, target_date, production_line
-            )
-            context['product_trend'] = product_trend
         
         return context
 
@@ -146,29 +118,6 @@ class WeeklySummaryView(ReportsPermissionMixin, TemplateView):
         return context
 
 
-class ProductionEfficiencyReportView(DetailedReportsPermissionMixin, TemplateView):
-    """Comprehensive production efficiency report - Requires detailed reports permission"""
-    template_name = 'reports/efficiency_report.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        form = ReportFilterForm(self.request.GET or None)
-        context['form'] = form
-        
-        if form.is_valid():
-            start_date = form.cleaned_data['start_date']
-            end_date = form.cleaned_data['end_date']
-            production_line = form.cleaned_data['production_line']
-            machine = form.cleaned_data['machine']
-            
-            report = ProductionCalculationService.generate_production_efficiency_report(
-                start_date, end_date, production_line, machine
-            )
-            context['report'] = report
-        
-        return context
-
-
 class OEETrendView(DetailedReportsPermissionMixin, TemplateView):
     """OEE trend analysis view - Requires detailed reports permission"""
     template_name = 'reports/oee_trend.html'
@@ -189,69 +138,6 @@ class OEETrendView(DetailedReportsPermissionMixin, TemplateView):
             )
             context['oee_data'] = oee_data
            
-        
-        return context
-
-
-class DowntimeAnalysisView(DetailedReportsPermissionMixin, TemplateView):
-    """Downtime analysis report view - Requires detailed reports permission"""
-    template_name = 'reports/downtime_analysis.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        form = DowntimeAnalysisForm(self.request.GET or None)
-        context['form'] = form
-        
-        if form.is_valid():
-            start_date = form.cleaned_data['start_date']
-            end_date = form.cleaned_data['end_date']
-            production_line = form.cleaned_data['production_line']
-            limit = form.cleaned_data['limit']
-            
-            downtime_data = ProductionCalculationService.get_top_downtime_reasons(
-                start_date, end_date, production_line, limit
-            )
-            oee_data = ProductionCalculationService.calculate_oee_trend(
-                start_date, end_date, production_line
-            )
-            
-            context['oee_trend'] = oee_data.get('oee_trend', []) if isinstance(oee_data, dict) else oee_data
-            
-            # Include additional data if available
-            if isinstance(oee_data, dict):
-                context['oee_downtime_analysis'] = oee_data.get('downtime_analysis', [])
-                context['oee_pareto_data'] = oee_data.get('downtime_pareto_data', {})
-            context['downtime_data'] = downtime_data
-            context['date_range'] = f"{start_date} to {end_date}"
-            
-            # Calculate Pareto chart data
-            pareto_data = ProductionCalculationService.calculate_downtime_pareto(
-                start_date, end_date, production_line, limit
-            )
-            context['pareto_data'] = pareto_data 
-            
-            # Calculate summary statistics for template
-            if downtime_data:
-                total_duration = sum(item['total_duration'] for item in downtime_data)
-                total_occurrences = sum(item['occurrence_count'] for item in downtime_data)
-                
-                # Add percentage and average calculations to each item
-                for item in downtime_data:
-                    if total_duration > 0:
-                        item['percentage_of_total'] = round((item['total_duration'] / total_duration) * 100, 1)
-                    else:
-                        item['percentage_of_total'] = 0
-                    
-                    if item['occurrence_count'] > 0:
-                        item['avg_duration'] = round(item['total_duration'] / item['occurrence_count'], 1)
-                    else:
-                        item['avg_duration'] = 0
-                
-                context['summary_stats'] = {
-                    'total_duration': total_duration,
-                    'total_occurrences': total_occurrences,
-                    'unique_reasons': len(downtime_data)
-                }
         
         return context
 

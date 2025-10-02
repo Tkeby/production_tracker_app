@@ -23,7 +23,20 @@
     <ul class="menu menu-horizontal px-1 space-x-2">
       <li><a href="/" class="font-medium hover:text-primary transition-colors">Home</a></li>
       <li><a href="{% url 'manufacturing:dashboard' %}" class="font-medium hover:text-primary transition-colors">Manufacturing</a></li>
-      <li><a href="{% url 'reports:dashboard' %}" class="font-medium hover:text-primary transition-colors">Reports</a></li>
+      <li>
+        <div class="dropdown font-medium hover:text-primary transition-colors">
+          <div tabindex="0" class="font-medium hover:text-primary transition-colors">Reports</div>
+          <ul
+            tabindex="0"
+            class="menu dropdown-content bg-base-200 rounded-box z-1 mt-8 w-52 p-2 shadow-sm">
+            <!-- <li><a href="{% url 'reports:dashboard' %}" class="font-medium hover:text-primary transition-colors">Dashboard</a></li> -->
+            <li><a href="{% url 'reports:daily_summary' %}" class="font-medium hover:text-primary transition-colors">Daily Summary</a></li>
+            <li><a href="{% url 'reports:weekly_summary' %}" class="font-medium hover:text-primary transition-colors">Weekly Summary</a></li>
+            <li><a href="{% url 'reports:oee_trend' %}" class="font-medium hover:text-primary transition-colors">OEE Trend</a></li>
+            <li><a href="{% url 'reports:machine_utilization' %}" class="font-medium hover:text-primary transition-colors">Machine Utilization</a></li>
+          </ul>
+        </div>
+      </li>
     </ul>
   </div>
   

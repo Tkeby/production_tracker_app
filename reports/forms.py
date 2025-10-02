@@ -60,8 +60,8 @@ class ReportFilterForm(forms.Form):
         return cleaned_data
 
 
-class ShiftSummaryForm(forms.Form):
-    """Form for shift summary report"""
+class DailySummaryForm(forms.Form):
+    """Form for daily summary report"""
     
     SHIFT_CHOICES = [
         ('', 'All Shifts'),
@@ -94,23 +94,7 @@ class ShiftSummaryForm(forms.Form):
     )
 
 
-class DailySummaryForm(forms.Form):
-    """Form for daily summary report"""
-    
-    target_date = forms.DateField(
-        widget=forms.DateInput(attrs={
-            'type': 'date', 
-            'class': 'input input-bordered w-full'
-        }),
-        initial=date.today
-    )
-    
-    production_line = forms.ModelChoiceField(
-        queryset=ProductionLine.objects.filter(is_active=True),
-        required=False,
-        empty_label="All Production Lines",
-        widget=forms.Select(attrs={'class': 'select select-bordered w-full'})
-    )
+
 
 
 class WeeklySummaryForm(forms.Form):
