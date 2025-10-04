@@ -265,7 +265,7 @@ class PackagingMaterialForm(forms.ModelForm):
         can_fields = [
             'qty_can_used', 'qty_empty_can_reject', 'qty_can_cover_used',
             'qty_can_cover_reject', 'qty_carton_used', 'qty_carton_reject', 
-            'qty_filled_can_reject'
+            # 'qty_filled_can_reject'
         ]
         
         if is_can_line:
@@ -295,7 +295,7 @@ class PackagingMaterialForm(forms.ModelForm):
         return [
             'qty_can_used', 'qty_empty_can_reject', 'qty_can_cover_used',
             'qty_can_cover_reject', 'qty_carton_used', 'qty_carton_reject',
-            'qty_filled_can_reject'
+            # 'qty_filled_can_reject'
         ]
     
     @property

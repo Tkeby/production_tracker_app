@@ -313,7 +313,7 @@ class PackagingMaterial(models.Model):
     qty_can_cover_reject = models.PositiveIntegerField(blank=True, null=True)
     qty_carton_used = models.PositiveIntegerField(blank=True, null=True)
     qty_carton_reject = models.PositiveIntegerField(blank=True, null=True)
-    qty_filled_can_reject = models.PositiveIntegerField(blank=True, null=True)
+    # qty_filled_can_reject = models.PositiveIntegerField(blank=True, null=True)
     
     # Common packaging materials
     label_reject_g = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)

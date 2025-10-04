@@ -152,25 +152,10 @@
                             </label>
                         {% endif %}
                     </div>
-
-                    <!-- Filler Rejects -->
-                    <div class="form-control">
-                        <label class="label" for="{{ packaging_form.qty_filled_can_reject.id_for_label }}">
-                            <span class="label-text">Product Reject (Filler)</span>
-                            <span class="label-text-alt text-error">*</span>
-                        </label>
-                        {{ packaging_form.qty_filled_can_reject }}
-                        {% if packaging_form.qty_filled_can_reject.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ packaging_form.qty_filled_can_reject.errors.0 }}</span>
-                            </label>
-                        {% endif %}
-                    </div>
-
-                    <!-- Product Rejects (Light/Inspection) -->
+                    <!-- Product Rejects -->
                     <div class="form-control">
                         <label class="label" for="{{ packaging_form.qty_product_reject.id_for_label }}">
-                            <span class="label-text">Product Rejects (Light/Inspection)</span>
+                            <span class="label-text">Product Rejects </span>
                             <span class="label-text-alt text-error">*</span>
                         </label>
                         {{ packaging_form.qty_product_reject }}
@@ -278,7 +263,7 @@
                     {{ packaging_form.qty_empty_can_reject.as_hidden }}
                     {{ packaging_form.qty_can_cover_reject.as_hidden }}
                     {{ packaging_form.qty_carton_reject.as_hidden }}
-                    {{ packaging_form.qty_filled_can_reject.as_hidden }}
+                   
 
                 {% endif %}
             {% endwith %}
