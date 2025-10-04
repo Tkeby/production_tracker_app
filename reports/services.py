@@ -189,7 +189,7 @@ class ProductionCalculationService:
         
         queryset = StopEvent.objects.filter(
             production_run__date__range=[start_date, end_date]
-        )
+        ).exclude(is_planned=True)
         
         if production_line:
             queryset = queryset.filter(production_run__production_line=production_line)
