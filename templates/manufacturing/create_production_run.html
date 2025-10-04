@@ -25,9 +25,29 @@
                 <form method="post" class="space-y-8" x-data="{ 
                     activeTab: 'basic',
                     tabs: ['basic', 'production', 'materials'],
+                    productionLineSelected: false,
+                    init() {
+                        // Check initial production line value
+                        this.checkProductionLine();
+                        // Watch for changes in production line field
+                        this.$watch('productionLineSelected', () => {
+                            // If production line is deselected while on disabled tabs, return to basic
+                            if (!this.productionLineSelected && (this.activeTab === 'production' || this.activeTab === 'materials')) {
+                                this.activeTab = 'basic';
+                            }
+                        });
+                    },
+                    checkProductionLine() {
+                        const productionLineField = document.querySelector('[name=production_line]');
+                        this.productionLineSelected = productionLineField && productionLineField.value !== '';
+                    },
                     nextTab() {
                         const currentIndex = this.tabs.indexOf(this.activeTab);
                         if (currentIndex < this.tabs.length - 1) {
+                            // Don't allow progression to production/materials tabs without production line
+                            if (currentIndex === 0 && !this.productionLineSelected) {
+                                return;
+                            }
                             this.activeTab = this.tabs[currentIndex + 1];
                         }
                     },
@@ -43,10 +63,22 @@
                     isLastTab() {
                         return this.activeTab === this.tabs[this.tabs.length - 1];
                     },
+                    canAccessTab(tabName) {
+                        if (tabName === 'basic') return true;
+                        return this.productionLineSelected;
+                    },
+                    switchTab(tabName) {
+                        if (this.canAccessTab(tabName)) {
+                            this.activeTab = tabName;
+                        }
+                    },
                     generateBatchNumber() {
                         // Get the production line field
                         const productionLineField = document.querySelector('[name=production_line]');
                         if (!productionLineField) return;
+                        
+                        // Update production line status
+                        this.checkProductionLine();
                         
                         // Get all required fields for batch generation
                         const product = document.querySelector('[name=product]')?.value;
@@ -77,9 +109,27 @@
                     {% csrf_token %}
                     
                     <div class="tabs tabs-boxed mb-6">
-                        <a class="tab" :class="{ 'tab-active': activeTab === 'basic' }" @click="activeTab = 'basic'">Basic Info</a>
-                        <a class="tab" :class="{ 'tab-active': activeTab === 'production' }" @click="activeTab = 'production'">Production Data</a>
-                        <a class="tab" :class="{ 'tab-active': activeTab === 'materials' }" @click="activeTab = 'materials'">Materials & Utility</a>
+                        <a class="tab" :class="{ 'tab-active': activeTab === 'basic' }" @click="switchTab('basic')">Basic Info</a>
+                        <a class="tab" 
+                           :class="{ 
+                               'tab-active': activeTab === 'production',
+                               'tab-disabled opacity-50 cursor-not-allowed': !canAccessTab('production')
+                           }" 
+                           @click="switchTab('production')"
+                           :title="!canAccessTab('production') ? 'Select a production line first' : ''">
+                            Production Data
+                            <span x-show="!canAccessTab('production')" class="ml-1 text-xs">🔒</span>
+                        </a>
+                        <a class="tab" 
+                           :class="{ 
+                               'tab-active': activeTab === 'materials',
+                               'tab-disabled opacity-50 cursor-not-allowed': !canAccessTab('materials')
+                           }" 
+                           @click="switchTab('materials')"
+                           :title="!canAccessTab('materials') ? 'Select a production line first' : ''">
+                            Materials & Utility
+                            <span x-show="!canAccessTab('materials')" class="ml-1 text-xs">🔒</span>
+                        </a>
                     </div>
                     
                     <!-- Basic Info Tab -->
@@ -130,7 +180,7 @@
                                         <span class="label-text">Production Line</span>
                                         <span class="label-text-alt text-error">*</span>
                                     </label>
-                                    <div @change="generateBatchNumber()">
+                                    <div @change="generateBatchNumber(); checkProductionLine()">
                                         {{ form.production_line }}
                                     </div>
                                     {% if form.production_line.errors %}
@@ -239,6 +289,19 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Production Line Required Warning -->
+                    <!-- <div x-show="!productionLineSelected" x-transition class="alert alert-warning shadow-lg mb-4">
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L5.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                            <div>
+                                <h3 class="font-bold">Production Line Required!</h3>
+                                <div class="text-xs">Please select a production line to access Production Data and Materials & Utility tabs.</div>
+                            </div>
+                        </div>
+                    </div> -->
                     
                     <!-- Tab Navigation -->
                     <div class="flex justify-between pt-6">
@@ -258,11 +321,18 @@
                         
                         <button 
                             type="button" 
-                            class="btn btn-primary btn-lg gap-2" 
+                            class="btn btn-lg gap-2" 
+                            :class="{ 
+                                'btn-primary': productionLineSelected,
+                                'btn-disabled': !productionLineSelected 
+                            }"
+                            :disabled="!productionLineSelected"
                             @click="nextTab()"
                             x-show="!isLastTab()"
                             x-transition
+                            :title="!productionLineSelected ? 'Select a production line to continue' : ''"
                         >
+                            <span x-show="!productionLineSelected" class="mr-2">🔒</span>
                             Next
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>

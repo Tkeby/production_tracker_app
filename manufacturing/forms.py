@@ -258,7 +258,7 @@ class PackagingMaterialForm(forms.ModelForm):
         # PET line specific fields
         pet_fields = [
             'qty_preform_used', 'qty_cap_used', 'qty_preform_reject', 
-            'qty_bottle_reject', 'qty_cap_reject'
+            'qty_bottle_reject', 'qty_cap_reject', 'label_reject_g'
         ]
         
         # Can line specific fields  
@@ -286,7 +286,7 @@ class PackagingMaterialForm(forms.ModelForm):
         """Return PET line specific fields"""
         return [
             'qty_preform_used', 'qty_cap_used', 'qty_product_reject',
-            'qty_preform_reject', 'qty_bottle_reject', 'qty_cap_reject'
+            'qty_preform_reject', 'qty_bottle_reject', 'qty_cap_reject', 'label_reject_g'
         ]
     
     @property 
@@ -301,7 +301,7 @@ class PackagingMaterialForm(forms.ModelForm):
     @property
     def common_fields(self):
         """Return common packaging fields"""
-        return ['label_reject_g', 'shrink_wrap_kg', 'stretch_wrap_g']
+        return [ 'shrink_wrap_kg', 'stretch_wrap_g']
     
     class Meta:
         model = PackagingMaterial

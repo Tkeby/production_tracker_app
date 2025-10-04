@@ -297,11 +297,11 @@ class ProductionRun(models.Model):
 class PackagingMaterial(models.Model):
     """Packaging materials used in a production run"""
     production_run = models.OneToOneField(ProductionRun, on_delete=models.CASCADE, related_name='packaging_material')
+    qty_product_reject = models.PositiveIntegerField(blank=True, null=True)
     
     # PET lien specific fields
     qty_preform_used = models.PositiveIntegerField(blank=True, null=True)
     qty_cap_used = models.PositiveIntegerField(blank=True, null=True)
-    qty_product_reject = models.PositiveIntegerField(blank=True, null=True)
     qty_preform_reject = models.PositiveIntegerField(blank=True, null=True)
     qty_bottle_reject = models.PositiveIntegerField(blank=True, null=True)
     qty_cap_reject = models.PositiveIntegerField(blank=True, null=True)

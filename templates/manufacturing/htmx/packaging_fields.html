@@ -153,6 +153,35 @@
                         {% endif %}
                     </div>
 
+                    <!-- Filler Rejects -->
+                    <div class="form-control">
+                        <label class="label" for="{{ packaging_form.qty_filled_can_reject.id_for_label }}">
+                            <span class="label-text">Product Reject (Filler)</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        {{ packaging_form.qty_filled_can_reject }}
+                        {% if packaging_form.qty_filled_can_reject.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ packaging_form.qty_filled_can_reject.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Product Rejects (Light/Inspection) -->
+                    <div class="form-control">
+                        <label class="label" for="{{ packaging_form.qty_product_reject.id_for_label }}">
+                            <span class="label-text">Product Rejects (Light/Inspection)</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        {{ packaging_form.qty_product_reject }}
+                        {% if packaging_form.qty_product_reject.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ packaging_form.qty_product_reject.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Can Cover Rejects -->
                     <div class="form-control">
                         <label class="label" for="{{ packaging_form.qty_can_cover_reject.id_for_label }}">
                             <span class="label-text">Can Cover Rejects</span>
@@ -166,6 +195,7 @@
                         {% endif %}
                     </div>
 
+                    <!-- Carton Rejects -->
                     <div class="form-control">
                         <label class="label" for="{{ packaging_form.qty_carton_reject.id_for_label }}">
                             <span class="label-text">Carton Rejects</span>
@@ -179,52 +209,16 @@
                         {% endif %}
                     </div>
 
-                    <div class="form-control">
-                        <label class="label" for="{{ packaging_form.qty_filled_can_reject.id_for_label }}">
-                            <span class="label-text">Filled Can Rejects</span>
-                            <span class="label-text-alt text-error">*</span>
-                        </label>
-                        {{ packaging_form.qty_filled_can_reject }}
-                        {% if packaging_form.qty_filled_can_reject.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ packaging_form.qty_filled_can_reject.errors.0 }}</span>
-                            </label>
-                        {% endif %}
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label" for="{{ packaging_form.qty_product_reject.id_for_label }}">
-                            <span class="label-text">Product Rejects</span>
-                            <span class="label-text-alt text-error">*</span>
-                        </label>
-                        {{ packaging_form.qty_product_reject }}
-                        {% if packaging_form.qty_product_reject.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ packaging_form.qty_product_reject.errors.0 }}</span>
-                            </label>
-                        {% endif %}
-                    </div>
-
                     <!-- Hide PET waste fields for CAN line -->
                     {{ packaging_form.qty_preform_reject.as_hidden }}
                     {{ packaging_form.qty_bottle_reject.as_hidden }}
                     {{ packaging_form.qty_cap_reject.as_hidden }}
+                    
 
                 {% else %}
                     <!-- PET Line Waste Fields (Default) -->
-                    <div class="form-control">
-                        <label class="label" for="{{ packaging_form.qty_product_reject.id_for_label }}">
-                            <span class="label-text">Product Rejects</span>
-                            <span class="label-text-alt text-error">*</span>
-                        </label>
-                        {{ packaging_form.qty_product_reject }}
-                        {% if packaging_form.qty_product_reject.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ packaging_form.qty_product_reject.errors.0 }}</span>
-                            </label>
-                        {% endif %}
-                    </div>
 
+                    <!-- Preform Rejects -->
                     <div class="form-control">
                         <label class="label" for="{{ packaging_form.qty_preform_reject.id_for_label }}">
                             <span class="label-text">Preform Rejects</span>
@@ -238,9 +232,10 @@
                         {% endif %}
                     </div>
 
+                    <!-- Bottle Rejects -->
                     <div class="form-control">
                         <label class="label" for="{{ packaging_form.qty_bottle_reject.id_for_label }}">
-                            <span class="label-text">Bottle Rejects</span>
+                            <span class="label-text">Bottle Rejects (Empty Bottle)</span>
                             <span class="label-text-alt text-error">*</span>
                         </label>
                         {{ packaging_form.qty_bottle_reject }}
@@ -251,6 +246,7 @@
                         {% endif %}
                     </div>
 
+                    <!-- Cap Rejects -->
                     <div class="form-control">
                         <label class="label" for="{{ packaging_form.qty_cap_reject.id_for_label }}">
                             <span class="label-text">Cap Rejects</span>
@@ -264,6 +260,20 @@
                         {% endif %}
                     </div>
 
+                    <!-- Product Rejects -->
+                    <div class="form-control">
+                        <label class="label" for="{{ packaging_form.qty_product_reject.id_for_label }}">
+                            <span class="label-text">Product Rejects</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        {{ packaging_form.qty_product_reject }}
+                        {% if packaging_form.qty_product_reject.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ packaging_form.qty_product_reject.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+
                     <!-- Hide CAN waste fields for PET line -->
                     {{ packaging_form.qty_empty_can_reject.as_hidden }}
                     {{ packaging_form.qty_can_cover_reject.as_hidden }}
@@ -272,66 +282,8 @@
 
                 {% endif %}
             {% endwith %}
-        {% else %}
-            <!-- Default: Show PET line waste fields when no line is selected -->
-            <div class="form-control">
-                <label class="label" for="{{ packaging_form.qty_product_reject.id_for_label }}">
-                    <span class="label-text">Product Rejects</span>
-                    <span class="label-text-alt text-error">*</span>
-                </label>
-                {{ packaging_form.qty_product_reject }}
-                {% if packaging_form.qty_product_reject.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ packaging_form.qty_product_reject.errors.0 }}</span>
-                    </label>
-                {% endif %}
-            </div>
-
-            <div class="form-control">
-                <label class="label" for="{{ packaging_form.qty_preform_reject.id_for_label }}">
-                    <span class="label-text">Preform Rejects</span>
-                    <span class="label-text-alt text-error">*</span>
-                </label>
-                {{ packaging_form.qty_preform_reject }}
-                {% if packaging_form.qty_preform_reject.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ packaging_form.qty_preform_reject.errors.0 }}</span>
-                    </label>
-                {% endif %}
-            </div>
-
-            <div class="form-control">
-                <label class="label" for="{{ packaging_form.qty_bottle_reject.id_for_label }}">
-                    <span class="label-text">Bottle Rejects</span>
-                    <span class="label-text-alt text-error">*</span>
-                </label>
-                {{ packaging_form.qty_bottle_reject }}
-                {% if packaging_form.qty_bottle_reject.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ packaging_form.qty_bottle_reject.errors.0 }}</span>
-                    </label>
-                {% endif %}
-            </div>
-
-            <div class="form-control">
-                <label class="label" for="{{ packaging_form.qty_cap_reject.id_for_label }}">
-                    <span class="label-text">Cap Rejects</span>
-                    <span class="label-text-alt text-error">*</span>
-                </label>
-                {{ packaging_form.qty_cap_reject }}
-                {% if packaging_form.qty_cap_reject.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ packaging_form.qty_cap_reject.errors.0 }}</span>
-                    </label>
-                {% endif %}
-            </div>
-
-            <!-- Hide CAN waste fields -->
-            {{ packaging_form.qty_empty_can_reject.as_hidden }}
-            {{ packaging_form.qty_can_cover_reject.as_hidden }}
-            {{ packaging_form.qty_carton_reject.as_hidden }}
-            {{ packaging_form.qty_filled_can_reject.as_hidden }}
         {% endif %}
+          
     </div>
 </div>
 
@@ -344,53 +296,79 @@
         Additional Materials
     </h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    
-        <div class="form-control">
-            <label class="label" for="{{ packaging_form.label_reject_g.id_for_label }}">
-                <span class="label-text">Label Reject</span>
-                <span class="label-text-alt text-error">*</span>
-            </label>
-            <div class="join">
-                {{ packaging_form.label_reject_g }}
-                <span class="btn btn-outline join-item">g</span>
-            </div>
-            {% if packaging_form.label_reject_g.errors %}
-                <label class="label">
-                    <span class="label-text-alt text-error">{{ packaging_form.label_reject_g.errors.0 }}</span>
+        {% if production_line %}
+            {% with line_name=production_line.name|upper %}
+                <!-- Label Reject - Hidden for CAN lines -->
+                {% if "CAN" not in line_name %}
+                    <div class="form-control">
+                        <label class="label" for="{{ packaging_form.label_reject_g.id_for_label }}">
+                            <span class="label-text">Label Reject</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <div class="join">
+                            {{ packaging_form.label_reject_g }}
+                            <span class="btn btn-outline join-item">g</span>
+                        </div>
+                        {% if packaging_form.label_reject_g.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ packaging_form.label_reject_g.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <!-- Hide Label Reject field for CAN line -->
+                    {{ packaging_form.label_reject_g.as_hidden }}
+                {% endif %}
+            {% endwith %}
+        {% else %}
+            <!-- Default: Show Label Reject field when no line is selected -->
+            <div class="form-control">
+                <label class="label" for="{{ packaging_form.label_reject_g.id_for_label }}">
+                    <span class="label-text">Label Reject</span>
+                    <span class="label-text-alt text-error">*</span>
                 </label>
-            {% endif %}
-        </div>
+                <div class="join">
+                    {{ packaging_form.label_reject_g }}
+                    <span class="btn btn-outline join-item">g</span>
+                </div>
+                {% if packaging_form.label_reject_g.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error">{{ packaging_form.label_reject_g.errors.0 }}</span>
+                    </label>
+                {% endif %}
+            </div>
+        {% endif %}
 
-        <div class="form-control">
-            <label class="label" for="{{ packaging_form.shrink_wrap_kg.id_for_label }}">
-                <span class="label-text">Shrink Wrap</span>
-                <span class="label-text-alt text-error">*</span>
-            </label>
-            <div class="join">
-                {{ packaging_form.shrink_wrap_kg }}
-                <span class="btn btn-outline join-item">kg</span>
-            </div>
-            {% if packaging_form.shrink_wrap_kg.errors %}
-                <label class="label">
-                    <span class="label-text-alt text-error">{{ packaging_form.shrink_wrap_kg.errors.0 }}</span>
+            <div class="form-control">
+                <label class="label" for="{{ packaging_form.shrink_wrap_kg.id_for_label }}">
+                    <span class="label-text">Shrink Wrap</span>
+                    <span class="label-text-alt text-error">*</span>
                 </label>
-            {% endif %}
-        </div>
+                <div class="join">
+                    {{ packaging_form.shrink_wrap_kg }}
+                    <span class="btn btn-outline join-item">kg</span>
+                </div>
+                {% if packaging_form.shrink_wrap_kg.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error">{{ packaging_form.shrink_wrap_kg.errors.0 }}</span>
+                    </label>
+                {% endif %}
+            </div>
 
-        <div class="form-control">
-            <label class="label" for="{{ packaging_form.stretch_wrap_g.id_for_label }}">
-                <span class="label-text">Stretch Wrap</span>
-                <span class="label-text-alt text-error">*</span>
-            </label>
-            <div class="join">
-                {{ packaging_form.stretch_wrap_g }}
-                <span class="btn btn-outline join-item">g</span>
-            </div>
-            {% if packaging_form.stretch_wrap_g.errors %}
-                <label class="label">
-                    <span class="label-text-alt text-error">{{ packaging_form.stretch_wrap_g.errors.0 }}</span>
+            <div class="form-control">
+                <label class="label" for="{{ packaging_form.stretch_wrap_g.id_for_label }}">
+                    <span class="label-text">Stretch Wrap</span>
+                    <span class="label-text-alt text-error">*</span>
                 </label>
-            {% endif %}
-        </div>
+                <div class="join">
+                    {{ packaging_form.stretch_wrap_g }}
+                    <span class="btn btn-outline join-item">g</span>
+                </div>
+                {% if packaging_form.stretch_wrap_g.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error">{{ packaging_form.stretch_wrap_g.errors.0 }}</span>
+                    </label>
+                {% endif %}
+            </div>
     </div>
 </div>

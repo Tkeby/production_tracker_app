@@ -1,4 +1,4 @@
-from django.db.models import Sum, Avg, Count, Q, Case, When, F, Value, FloatField, ExpressionWrapper
+from django.db.models import Sum, Avg, Count
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import datetime, date, timedelta
@@ -268,6 +268,15 @@ class ProductionCalculationService:
         # Convert to list and add downtime data
         oee_data = list(daily_oee)
         
+        # Calculate overall period averages
+        period_averages = queryset.aggregate(
+            period_avg_oee=Avg('oee'),
+            period_avg_availability=Avg('availability'),
+            period_avg_performance=Avg('performance'),
+            period_avg_quality=Avg('quality'),
+            total_runs=Count('id')
+        )
+        
         # Format downtime data for Pareto chart using existing method
         downtime_pareto_data = ProductionCalculationService.calculate_downtime_pareto(
             start_date, end_date, production_line
@@ -276,6 +285,7 @@ class ProductionCalculationService:
         return {
             'period': base_data['period'],
             'oee_trend': oee_data,
+            'period_averages': period_averages,
             'downtime_analysis': downtime_analysis,
             'downtime_pareto_data': downtime_pareto_data
         }
