@@ -310,6 +310,43 @@
 <script>
 // OEE Trend Chart
 {% if oee_data %}
+// Custom plugin to display data labels without external dependency
+const dataLabelsPlugin = {
+    id: 'dataLabels',
+    afterDatasetsDraw: function(chart, args, options) {
+        const ctx = chart.ctx;
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
+            if (dataset.label === 'OEE %') { // Only show labels for OEE dataset
+                const meta = chart.getDatasetMeta(datasetIndex);
+                meta.data.forEach((point, index) => {
+                    const value = dataset.data[index];
+                    if (value !== null && value !== undefined) {
+                        ctx.save();
+                        ctx.font = 'bold 11px Arial';
+                        ctx.fillStyle = dataset.borderColor;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        
+                        const text = value + '%';
+                        const x = point.x;
+                        const y = point.y - 8; // Position above the point
+                        
+                        // Add background for better visibility
+                        const textWidth = ctx.measureText(text).width;
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.fillRect(x - textWidth/2 - 2, y - 12, textWidth + 4, 14);
+                        
+                        // Draw the text
+                        ctx.fillStyle = dataset.borderColor;
+                        ctx.fillText(text, x, y);
+                        ctx.restore();
+                    }
+                });
+            }
+        });
+    }
+};
+
 const ctx = document.getElementById('oeeChart').getContext('2d');
 const oeeChart = new Chart(ctx, {
     type: 'line',
@@ -374,6 +411,7 @@ const oeeChart = new Chart(ctx, {
             }
         ]
     },
+    plugins: [dataLabelsPlugin],
     options: {
         responsive: true,
         maintainAspectRatio: false,
