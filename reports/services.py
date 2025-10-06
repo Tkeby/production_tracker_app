@@ -268,14 +268,30 @@ class ProductionCalculationService:
         # Convert to list and add downtime data
         oee_data = list(daily_oee)
         
-        # Calculate overall period averages
-        period_averages = queryset.aggregate(
-            period_avg_oee=Avg('oee'),
-            period_avg_availability=Avg('availability'),
-            period_avg_performance=Avg('performance'),
-            period_avg_quality=Avg('quality'),
-            total_runs=Count('id')
-        )
+        # Calculate overall period averages from daily averages (not from individual records)
+        # This ensures period averages match what users see as average of daily values
+        if oee_data:
+            period_avg_oee = sum(day['avg_oee'] or 0 for day in oee_data) / len(oee_data)
+            period_avg_availability = sum(day['avg_availability'] or 0 for day in oee_data) / len(oee_data)
+            period_avg_performance = sum(day['avg_performance'] or 0 for day in oee_data) / len(oee_data)
+            period_avg_quality = sum(day['avg_quality'] or 0 for day in oee_data) / len(oee_data)
+            total_runs = sum(day['runs_count'] or 0 for day in oee_data)
+            
+            period_averages = {
+                'period_avg_oee': period_avg_oee,
+                'period_avg_availability': period_avg_availability,
+                'period_avg_performance': period_avg_performance,
+                'period_avg_quality': period_avg_quality,
+                'total_runs': total_runs
+            }
+        else:
+            period_averages = {
+                'period_avg_oee': 0,
+                'period_avg_availability': 0,
+                'period_avg_performance': 0,
+                'period_avg_quality': 0,
+                'total_runs': 0
+            }
         
         # Format downtime data for Pareto chart using existing method
         downtime_pareto_data = ProductionCalculationService.calculate_downtime_pareto(
