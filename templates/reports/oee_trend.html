@@ -164,6 +164,7 @@
                                 <th class="text-center">Quality %</th>
                                 <th class="text-center">Runs</th>
                                 <th>Grade</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -193,6 +194,12 @@
                                     {% else %}
                                         <span class="badge badge-error">Poor</span>
                                     {% endif %}
+                                </td>
+                                
+                                <td>
+                                    <a href="{% url 'manufacturing:production_run_detail' item.production_run__id %}" class="btn btn-outline btn-sm">
+                                        View Details
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}

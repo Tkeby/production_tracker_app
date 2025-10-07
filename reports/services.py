@@ -1,4 +1,4 @@
-from django.db.models import Sum, Avg, Count
+from django.db.models import Sum, Avg, Count, F
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import datetime, date, timedelta
@@ -262,7 +262,9 @@ class ProductionCalculationService:
             avg_availability=Avg('availability'),
             avg_performance=Avg('performance'),
             avg_quality=Avg('quality'),
-            runs_count=Count('id')
+            runs_count=Count('id'),
+            production_run__id=F('production_run__id')
+
         ).order_by('production_run__date')
         
         # Convert to list and add downtime data

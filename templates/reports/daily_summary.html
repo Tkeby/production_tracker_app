@@ -202,7 +202,7 @@
                                     <th>Syrup Yield</th>
                                     <th>Downtime</th>
                                     <th>OEE</th>
-                                    <!-- <th>Status</th> -->
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -251,6 +251,11 @@
                                             {% if run.is_completed %}Completed{% else %}In Progress{% endif %}
                                         </span>
                                     </td> -->
+                                    <td>
+                                        <a href="{% url 'manufacturing:production_run_detail' run.pk %}" class="btn btn-outline btn-sm">
+                                            View Details
+                                        </a>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
