@@ -413,7 +413,8 @@ sudo certbot renew --dry-run
 
 ## Phase 7: Backup Strategy
 
-### 7.1 Database Backup Script
+### 7.1 Database Backup Script - with aws s3 backup
+Make sure aws s3 configration is done correctly.
 
 Create `/home/deploy/scripts/backup_db.sh`:
 ```bash
@@ -422,8 +423,13 @@ sudo mkdir -p /home/deploy/scripts
 ```bash
 #!/bin/bash
 DATE=$(date +"%Y%m%d_%H%M%S")
+DAY_OF_MONTH=$(date +"%d")
 BACKUP_DIR="/home/deploy/backups"
 PROJECT_DIR="/home/deploy/production_tracker"
+
+# S3 Configuration - Update these values
+S3_BUCKET="your-bucket-name"
+S3_REGION="eu-north-1"  # Change to your preferred region
 
 # Create backup directory
 mkdir -p $BACKUP_DIR
@@ -435,10 +441,27 @@ sqlite3 db.sqlite3 "PRAGMA wal_checkpoint(FULL); .backup $BACKUP_DIR/db_$DATE.sq
 # Compress the backup
 gzip $BACKUP_DIR/db_$DATE.sqlite3
 
-# Keep only last 30 days of backups
-find $BACKUP_DIR -name "db_*.sqlite3.gz" -mtime +30 -delete
+# Local backup cleanup - keep only last 30 days
+find $BACKUP_DIR -name "db_*.sqlite3.gz" -type f -mtime +30 -exec rm -f {} \;
 
-# Log the backup
+# S3 Sync - Rolling daily backup (overwrites same day each month)
+S3_KEY="backups/daily/backup-${DAY_OF_MONTH}.gz"
+LOCAL_FILE="$BACKUP_DIR/db_$DATE.sqlite3.gz"
+
+# Upload to S3
+if command -v aws &> /dev/null; then
+    echo "$(date): Starting S3 sync to s3://$S3_BUCKET/$S3_KEY" >> $BACKUP_DIR/backup.log
+    
+    if aws s3 cp "$LOCAL_FILE" "s3://$S3_BUCKET/$S3_KEY" --region "$S3_REGION"; then
+        echo "$(date): S3 sync completed successfully - s3://$S3_BUCKET/$S3_KEY" >> $BACKUP_DIR/backup.log
+    else
+        echo "$(date): ERROR: S3 sync failed for backup-${DAY_OF_MONTH}.gz" >> $BACKUP_DIR/backup.log
+    fi
+else
+    echo "$(date): WARNING: AWS CLI not found, skipping S3 sync" >> $BACKUP_DIR/backup.log
+fi
+
+# Log the local backup completion
 echo "$(date): Database backup completed - db_$DATE.sqlite3.gz" >> $BACKUP_DIR/backup.log
 ```
 
