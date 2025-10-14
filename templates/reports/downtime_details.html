@@ -1,0 +1,203 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Downtime Details{% endblock %}
+
+{% block subtitle %}
+<p class="text-lg md:text-xl text-base-content/70 max-w-3xl">
+    Detailed downtime events for selected filters
+</p>
+{% endblock %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'reports:dashboard' %}">Reports</a></li>
+<li><a href="{% url 'reports:oee_trend' %}">OEE Trend</a></li>
+<li>Downtime Details</li>
+{% endblock %}
+
+{% block main_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <!-- Filter Summary Card -->
+        <div class="card bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-2xl mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Downtime Details
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    {% if downtime_code %}
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <p class="text-sm opacity-80">Downtime Code</p>
+                        <p class="text-xl font-bold">{{ downtime_code.code }}</p>
+                        <p class="text-sm">{{ downtime_code.reason }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if machine %}
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <p class="text-sm opacity-80">Machine</p>
+                        <p class="text-xl font-bold">{{ machine.machine_name }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if production_line %}
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <p class="text-sm opacity-80">Production Line</p>
+                        <p class="text-xl font-bold">{{ production_line.name }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if start_date and end_date %}
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <p class="text-sm opacity-80">Date Range</p>
+                        <p class="text-lg font-bold">{{ start_date }} to {{ end_date }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
+            <div class="stat">
+                <div class="stat-figure text-primary">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Total Events</div>
+                <div class="stat-value text-primary">{{ summary.total_events|default:0 }}</div>
+                <div class="stat-desc">Downtime occurrences</div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-figure text-error">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Total Duration</div>
+                <div class="stat-value text-error">{{ summary.total_duration|default:0|floatformat:0|intcomma }}</div>
+                <div class="stat-desc">minutes</div>
+            </div>
+            
+            <div class="stat">
+                <div class="stat-figure text-warning">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <div class="stat-title">Average Duration</div>
+                <div class="stat-value text-warning">{{ summary.avg_duration|default:0|floatformat:1 }}</div>
+                <div class="stat-desc">minutes per event</div>
+            </div>
+        </div>
+
+        <!-- Downtime Events Table -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="card-title text-2xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        Downtime Events
+                    </h3>
+                    <a href="{% url 'reports:oee_trend' %}?start_date={{ start_date }}&end_date={{ end_date }}{% if production_line %}&production_line={{ production_line.id }}{% endif %}{% if machine %}&machine={{ machine.id }}{% endif %}" class="btn btn-ghost btn-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to OEE Trend
+                    </a>
+                </div>
+
+                {% if downtime_events %}
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Production Run</th>
+                                <th>Machine</th>
+                                <th>Downtime Code</th>
+                                <th>Reason/Remark</th>
+                                <th class="text-center">Duration</th>
+                                <th>Impact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in downtime_events %}
+                            <tr>
+                                <td class="font-bold">{{ forloop.counter }}</td>
+                                <td>
+                                    <div class="font-semibold">{{ event.production_run.date }}</div>
+                                </td>
+                                <td>
+                                    <div class="text-sm">{{ event.timestamp|date:"H:i" }}</div>
+                                </td>
+                                <td>
+                                    <div class="flex flex-col">
+                                        <span class="font-semibold">{{ event.production_run.product.product_name }}</span>
+                                        <span class="text-xs text-gray-500">{{ event.production_run.production_line.name }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="font-semibold">{{ event.machine.machine_name }}</div>
+                                </td>
+                                <td>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="badge badge-outline font-mono">{{ event.code.code }}</span>
+                                        <span class="text-sm text-gray-600">{{ event.code.reason }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="max-w-xs">
+                                        <span class="text-sm">{{ event.reason|default:"—" }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="font-bold text-lg {% if event.duration_minutes > 60 %}text-red-600{% elif event.duration_minutes > 30 %}text-orange-600{% else %}text-green-600{% endif %}">
+                                        {{ event.duration_minutes }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">minutes</div>
+                                </td>
+                                <td>
+                                    {% if event.duration_minutes > 120 %}
+                                        <span class="badge badge-error">Critical</span>
+                                    {% elif event.duration_minutes > 60 %}
+                                        <span class="badge badge-warning">High</span>
+                                    {% elif event.duration_minutes > 30 %}
+                                        <span class="badge badge-info">Medium</span>
+                                    {% else %}
+                                        <span class="badge badge-success">Low</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <!-- No Data State -->
+                <div class="text-center py-12">
+                    <svg class="w-24 h-24 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-xl text-gray-500">No downtime events found for the selected filters</p>
+                    <p class="text-gray-400 mt-2">Try adjusting your filter criteria</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+

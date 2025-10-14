@@ -196,7 +196,7 @@ class ProductionCalculationService:
         if machine:
             queryset = queryset.filter(machine=machine)
         
-        downtime_analysis = queryset.values('code__code','code__reason', 'reason', 'machine__machine_name').annotate(
+        downtime_analysis = queryset.values('code__id','code__code','code__reason', 'reason', 'machine__id', 'machine__machine_name').annotate(
             total_duration=Sum('duration_minutes'),
             occurrence_count=Count('id'),
         ).order_by('-total_duration')[:limit]

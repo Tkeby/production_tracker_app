@@ -21,6 +21,7 @@ urlpatterns = [
     # Analysis Reports
    
     path('oee-trend/', views.OEETrendView.as_view(), name='oee_trend'),
+    path('downtime-details/', views.DowntimeDetailsView.as_view(), name='downtime_details'),
     
     path('machine-utilization/', views.MachineUtilizationView.as_view(), name='machine_utilization'),
    

@@ -137,7 +137,89 @@ class OEETrendView(DetailedReportsPermissionMixin, TemplateView):
                 start_date, end_date, production_line, machine
             )
             context['oee_data'] = oee_data
+            
+            # Add filter parameters to context for use in links
+            context['filter_params'] = {
+                'start_date': start_date,
+                'end_date': end_date,
+                'production_line_id': production_line.id if production_line else None,
+                'machine_id': machine.id if machine else None,
+            }
            
+        
+        return context
+
+
+class DowntimeDetailsView(DetailedReportsPermissionMixin, TemplateView):
+    """Detailed downtime events view - Shows all downtime events for a specific code"""
+    template_name = 'reports/downtime_details.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get filter parameters from URL
+        code_id = self.request.GET.get('code_id')
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        machine_id = self.request.GET.get('machine')
+        production_line_id = self.request.GET.get('production_line')
+        
+        # Import StopEvent model
+        from manufacturing.models import StopEvent, DowntimeCode
+        
+        # Start with base queryset - exclude planned downtime
+        queryset = StopEvent.objects.select_related(
+            'production_run', 'machine', 'code'
+        ).exclude(is_planned=True)
+        
+        # Apply filters
+        if code_id:
+            queryset = queryset.filter(code__id=code_id)
+            try:
+                downtime_code = DowntimeCode.objects.get(id=code_id)
+                context['downtime_code'] = downtime_code
+            except DowntimeCode.DoesNotExist:
+                pass
+        
+        if start_date and end_date:
+            queryset = queryset.filter(
+                production_run__date__range=[start_date, end_date]
+            )
+            context['start_date'] = start_date
+            context['end_date'] = end_date
+        
+        if machine_id:
+            queryset = queryset.filter(machine__id=machine_id)
+            try:
+                machine = Machine.objects.get(id=machine_id)
+                context['machine'] = machine
+            except Machine.DoesNotExist:
+                pass
+        
+        if production_line_id:
+            queryset = queryset.filter(
+                production_run__production_line__id=production_line_id
+            )
+            try:
+                production_line = ProductionLine.objects.get(id=production_line_id)
+                context['production_line'] = production_line
+            except ProductionLine.DoesNotExist:
+                pass
+        
+        # Order by most recent first
+        queryset = queryset.order_by('-production_run__date', '-timestamp')
+        
+        # Get the downtime events
+        context['downtime_events'] = queryset
+        
+        # Calculate summary statistics
+        from django.db.models import Sum, Count, Avg
+        summary = queryset.aggregate(
+            total_events=Count('id'),
+            total_duration=Sum('duration_minutes'),
+            avg_duration=Avg('duration_minutes')
+        )
+        context['summary'] = summary
         
         return context
 

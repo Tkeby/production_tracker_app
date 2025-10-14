@@ -248,6 +248,7 @@
                                 <th class="text-center">Avg Duration</th>
                                 <th class="text-center">% of Total</th>
                                 <th>Impact</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -300,6 +301,31 @@
                                     {% else %}
                                         <span class="badge badge-success">Low</span>
                                     {% endif %}
+                                </td>
+                                <td>
+                                    <div class="dropdown dropdown-end">
+                                        <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                                            <li>
+                                                <a href="{% url 'reports:downtime_details' %}?code_id={{ item.code__id }}&machine={{ item.machine__id }}&start_date={{ filter_params.start_date|date:'Y-m-d' }}&end_date={{ filter_params.end_date|date:'Y-m-d' }}{% if filter_params.production_line_id %}&production_line={{ filter_params.production_line_id }}{% endif %}">
+                                                    
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                        </svg>
+                                                        <span class="pl-4">View Details</span>
+                                                   
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    </div>
+                                   
                                 </td>
                             </tr>
                             {% endfor %}
