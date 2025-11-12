@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from allauth.account.views import LoginView, SignupView, ConfirmEmailView, EmailVerificationSentView,LogoutView
 from django.contrib import messages
+from allauth.account.internal import flows
+from allauth.core.exceptions import ImmediateHttpResponse
 
 
 class CustomLoginView(LoginView):
@@ -33,10 +35,24 @@ class CustomSignupView(SignupView):
         return context
     
     def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, 'Account created successfully! Please check your email to verify your account.')
-        return response
-
+        self.user, resp = form.try_save(self.request)
+        if resp:
+            return resp
+        # Deactivate account pending admin approval
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        messages.success(self.request, 'Account created successfully! Your account is pending admin approval.')
+        try:
+            redirect_url = self.get_success_url()
+            return flows.signup.complete_signup(
+                self.request,
+                user=self.user,
+                redirect_url=redirect_url,
+                by_passkey=getattr(form, "by_passkey", False),
+            )
+        except ImmediateHttpResponse as e:
+            return e.response
+    
 
 class CustomConfirmEmailView(ConfirmEmailView):
     """Custom email confirmation view extending allauth's ConfirmEmailView"""
