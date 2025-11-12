@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from allauth.account.views import LoginView, SignupView, ConfirmEmailView, EmailVerificationSentView
+from allauth.account.views import LoginView, SignupView, ConfirmEmailView, EmailVerificationSentView,LogoutView
 from django.contrib import messages
 
 

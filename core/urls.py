@@ -8,7 +8,7 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),  # Dynamic admin URL for security
     path("production-admin/", manufacturing_admin_site.urls),  # Custom production admin - this will be removed later.
     path('accounts/', include('accounts.urls')),
-    path('', include('home.urls')),
+    # path('', include('home.urls')),
     path('manufacturing/', include('manufacturing.urls')),    
     path('reports/', include('reports.urls')),    
 ]
