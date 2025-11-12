@@ -151,7 +151,7 @@ AUTHENTICATION_BACKENDS = [
 
 # Allauth settings
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Since our User model doesn't have a username field
-
+ACCOUNT_ADAPTER = 'accounts.views.CustomAccountAdapter'
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 DJANGO_ADMIN_FORCE_ALLAUTH = False

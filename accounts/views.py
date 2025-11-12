@@ -6,6 +6,16 @@ from allauth.account.internal import flows
 from allauth.core.exceptions import ImmediateHttpResponse
 
 
+    # myproject/adapters.py
+from allauth.account.adapter import DefaultAccountAdapter
+
+class CustomAccountAdapter(DefaultAccountAdapter):
+    def is_open_for_signup(self, request):
+        """
+        Prevents new users from signing up.
+        """
+        return False
+
 class CustomLoginView(LoginView):
     """Custom login view extending allauth's LoginView"""
     template_name = 'accounts/login.html'
