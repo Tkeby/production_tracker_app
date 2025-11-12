@@ -35,24 +35,17 @@ class CustomSignupView(SignupView):
         return context
     
     def form_valid(self, form):
-        self.user, resp = form.try_save(self.request)
-        if resp:
-            return resp
-        # Deactivate account pending admin approval
-        self.user.is_active = False
-        self.user.save(update_fields=["is_active"])
-        messages.success(self.request, 'Account created successfully! Your account is pending admin approval.')
-        try:
-            redirect_url = self.get_success_url()
-            return flows.signup.complete_signup(
-                self.request,
-                user=self.user,
-                redirect_url=redirect_url,
-                by_passkey=getattr(form, "by_passkey", False),
-            )
-        except ImmediateHttpResponse as e:
-            return e.response
-    
+        response = super().form_valid(form)
+        messages.success(self.request, 'Account created successfully! Please check your email to verify your account.')
+        return response
+
+    def save_user(self, request, user, form, commit=True):
+        user = super().save_user(request, user, form, commit=False)
+        user.is_active = False  # Set user to inactive initially
+        if commit:
+            user.save()
+        return user
+
 
 class CustomConfirmEmailView(ConfirmEmailView):
     """Custom email confirmation view extending allauth's ConfirmEmailView"""
