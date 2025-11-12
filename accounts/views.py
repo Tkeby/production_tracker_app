@@ -15,6 +15,14 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         Prevents new users from signing up.
         """
         return False
+    
+    def save_user(self, request, user, form, commit=True):
+
+        user = super().save_user(request, user, form, commit=False)
+        user.is_active = False  # Set user to inactive initially
+        if commit:
+            user.save()
+        return user
 
 class CustomLoginView(LoginView):
     """Custom login view extending allauth's LoginView"""
@@ -48,13 +56,6 @@ class CustomSignupView(SignupView):
         response = super().form_valid(form)
         messages.success(self.request, 'Account created successfully! Please check your email to verify your account.')
         return response
-
-    def save_user(self, request, user, form, commit=True):
-        user = super().save_user(request, user, form, commit=False)
-        user.is_active = False  # Set user to inactive initially
-        if commit:
-            user.save()
-        return user
 
 
 class CustomConfirmEmailView(ConfirmEmailView):
