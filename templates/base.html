@@ -34,7 +34,14 @@
         <div class="px-4 pt-4">
             <div class="space-y-2">
                 {% for message in messages %}
-                <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'error' in message.tags %}alert-error{% elif 'warning' in message.tags %}alert-warning{% else %}alert-info{% endif %} shadow-sm">
+                <div 
+                    x-data="{ show: true }" 
+                    x-init="setTimeout(() => show = false, 4000)" 
+                    x-show="show" 
+                    x-transition.opacity.duration.500ms
+                    class="alert {% if 'success' in message.tags %}alert-success{% elif 'error' in message.tags %}alert-error{% elif 'warning' in message.tags %}alert-warning{% else %}alert-info{% endif %} shadow-sm"
+                    role="alert"
+                >
                     <span>{{ message }}</span>
                 </div>
                 {% endfor %}
