@@ -27,7 +27,7 @@
             
             <!-- User-friendly message -->
             {% if user.is_authenticated %}
-                <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <!-- <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -35,18 +35,19 @@
                             </svg>
                         </div>
                         <div class="ml-3">
+                            
                             <h3 class="text-sm font-medium text-yellow-800">
                                 Permission Required
                             </h3>
-                            <!-- <div class="mt-2 text-sm text-yellow-700">
+                            <div class="mt-2 text-sm text-yellow-700">
                                 <p>Hi <strong>{{ user.email }}</strong>, you need additional permissions to view this page.</p>
                                 <p class="mt-1">Please contact your administrator to request access to the reports dashboard.</p>
-                            </div> -->
+                            </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             {% else %}
-                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <!-- <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
@@ -62,7 +63,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             {% endif %}
             
             <!-- Action buttons -->
