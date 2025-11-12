@@ -74,6 +74,8 @@ if DEBUG:
 
 AUTH_USER_MODEL = 'accounts.User'
 
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 2 # 1 day
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

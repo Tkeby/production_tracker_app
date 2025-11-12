@@ -395,6 +395,19 @@ class DeleteStopEventView(LoginRequiredMixin, DeleteView):
         return reverse_lazy('manufacturing:production_run_detail', kwargs={'pk': self.production_run.pk})
 
 
+class DowntimeDetailView(LoginRequiredMixin, DetailView):
+    model = StopEvent
+    template_name = 'manufacturing/downtime_detail.html'
+    context_object_name = 'stop_event'
+
+    def get_queryset(self):
+        return StopEvent.objects.filter(id=self.kwargs['pk'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['stop_event'] = self.object
+        return context
+
 def htmx_product_packages(request):
     """Get package sizes available for a product"""
     product_id = request.GET.get('product')
