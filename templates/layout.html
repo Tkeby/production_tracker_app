@@ -16,12 +16,12 @@
         <li><a href="{% url 'reports:dashboard' %}" class="font-medium">Reports</a></li>
       </ul>
     </div>
-    <a href="/" class="btn btn-ghost text-xl font-bold text-primary">Manufacturing System</a>
+    <a href="{% url 'manufacturing:dashboard' %}" class="btn btn-ghost text-xl font-bold text-primary">Manufacturing System</a>
   </div>
   
   <div class="navbar-center hidden lg:flex">
     <ul class="menu menu-horizontal px-1 space-x-2">
-      <li><a href="/" class="font-medium hover:text-primary transition-colors">Home</a></li>
+      <!-- <li><a href="/" class="font-medium hover:text-primary transition-colors">Home</a></li> -->
       <li><a href="{% url 'manufacturing:dashboard' %}" class="font-medium hover:text-primary transition-colors">Manufacturing</a></li>
       <li>
         <div class="dropdown font-medium hover:text-primary transition-colors">
