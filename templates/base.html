@@ -30,6 +30,17 @@
     {% block body_header %}{% endblock %}
     
     <div class="{% block container_class %}container mx-auto{% endblock %}">
+        {% if messages %}
+        <div class="px-4 pt-4">
+            <div class="space-y-2">
+                {% for message in messages %}
+                <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'error' in message.tags %}alert-error{% elif 'warning' in message.tags %}alert-warning{% else %}alert-info{% endif %} shadow-sm">
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
         {% block content %}
         {% endblock %}
     </div>

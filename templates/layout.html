@@ -84,6 +84,17 @@
       </ul>
     </div>
     
+    <!-- Global messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for message in messages %}
+      <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'error' in message.tags %}alert-error{% elif 'warning' in message.tags %}alert-warning{% else %}alert-info{% endif %} shadow-sm">
+        <span>{{ message }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
     <!-- Page Title Section -->
     {% block page_title %}
     <div class="mb-8">
