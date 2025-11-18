@@ -95,20 +95,26 @@ class ProductionReportInline(admin.StackedInline):
     )
     
     def oee_grade_display(self, obj):
-        if obj and obj.oee:
-            grade = obj.oee_grade
-            color_map = {
-                'World Class': 'green',
-                'Good': 'blue', 
-                'Fair': 'orange',
-                'Poor': 'red',
-                'No Data': 'gray'
-            }
-            color = color_map.get(grade, 'gray')
-            return format_html(
-                '<span style="color: {}; font-weight: bold;">{}</span>',
-                color, grade
-            )
+        from decimal import InvalidOperation
+        
+        try:
+            if obj and obj.oee:
+                grade = obj.oee_grade
+                color_map = {
+                    'World Class': 'green',
+                    'Good': 'blue', 
+                    'Fair': 'orange',
+                    'Poor': 'red',
+                    'No Data': 'gray'
+                }
+                color = color_map.get(grade, 'gray')
+                return format_html(
+                    '<span style="color: {}; font-weight: bold;">{}</span>',
+                    color, grade
+                )
+        except (InvalidOperation, ValueError, AttributeError):
+            return format_html('<span style="color: red;">Error: Invalid data</span>')
+        
         return "Not calculated"
     oee_grade_display.short_description = "OEE Grade"
 
@@ -209,25 +215,32 @@ class ProductionRunAdmin(admin.ModelAdmin):
     actions = ['calculate_reports', 'mark_completed', 'generate_summary_report']
     
     def oee_display(self, obj):
-        if hasattr(obj, 'report') and obj.report.oee:
-            oee_value = float(obj.report.oee)
-            grade = obj.report.oee_grade
-            
-            color_map = {
-                'World Class': '#28a745',
-                'Good': '#007bff', 
-                'Fair': '#ffc107',
-                'Poor': '#dc3545',
-                'No Data': '#6c757d'
-            }
-            color = color_map.get(grade, '#6c757d')
-            oee_str = f"{oee_value:.1f}"
-            
-            return format_html(
-                '<span style="background-color: {}; color: white; padding: 2px 8px; '
-                'border-radius: 3px; font-size: 11px; font-weight: bold;">{}%</span>',
-                color, oee_str
-            )
+        from decimal import InvalidOperation
+        
+        try:
+            if hasattr(obj, 'report') and obj.report and obj.report.oee:
+                oee_value = float(obj.report.oee)
+                grade = obj.report.oee_grade
+                
+                color_map = {
+                    'World Class': '#28a745',
+                    'Good': '#007bff', 
+                    'Fair': '#ffc107',
+                    'Poor': '#dc3545',
+                    'No Data': '#6c757d'
+                }
+                color = color_map.get(grade, '#6c757d')
+                oee_str = f"{oee_value:.1f}"
+                
+                return format_html(
+                    '<span style="background-color: {}; color: white; padding: 2px 8px; '
+                    'border-radius: 3px; font-size: 11px; font-weight: bold;">{}%</span>',
+                    color, oee_str
+                )
+        except (InvalidOperation, ValueError, AttributeError) as e:
+            # Handle invalid decimal values in database
+            return format_html('<span style="color: #dc3545;">Error: Invalid data</span>')
+        
         return format_html('<span style="color: #6c757d;">Not calculated</span>')
     oee_display.short_description = "OEE"
     
@@ -326,24 +339,30 @@ class ProductionReportAdmin(admin.ModelAdmin):
     readonly_fields = ['calculated_at']
     
     def oee_display(self, obj):
-        if obj.oee:
-            grade = obj.oee_grade
-            color_map = {
-                'World Class': '#28a745',
-                'Good': '#007bff', 
-                'Fair': '#ffc107',
-                'Poor': '#dc3545',
-                'No Data': '#6c757d'
-            }
-            color = color_map.get(grade, '#6c757d')
-            oee_str = f"{float(obj.oee):.1f}"
-            return format_html(
-                '<div style="text-align: center;">'
-                '<div style="background-color: {}; color: white; padding: 4px; '
-                'border-radius: 4px; margin-bottom: 2px; font-weight: bold;">{}%</div>'
-                '<small style="color: {};">{}</small></div>',
-                color, oee_str, color, grade
-            )
+        from decimal import InvalidOperation
+        
+        try:
+            if obj.oee:
+                grade = obj.oee_grade
+                color_map = {
+                    'World Class': '#28a745',
+                    'Good': '#007bff', 
+                    'Fair': '#ffc107',
+                    'Poor': '#dc3545',
+                    'No Data': '#6c757d'
+                }
+                color = color_map.get(grade, '#6c757d')
+                oee_str = f"{float(obj.oee):.1f}"
+                return format_html(
+                    '<div style="text-align: center;">'
+                    '<div style="background-color: {}; color: white; padding: 4px; '
+                    'border-radius: 4px; margin-bottom: 2px; font-weight: bold;">{}%</div>'
+                    '<small style="color: {};">{}</small></div>',
+                    color, oee_str, color, grade
+                )
+        except (InvalidOperation, ValueError, AttributeError):
+            return format_html('<span style="color: #dc3545;">Error: Invalid data</span>')
+        
         return "Not calculated"
     oee_display.short_description = "OEE"
     
@@ -360,10 +379,16 @@ class ProductionReportAdmin(admin.ModelAdmin):
     quality_display.short_description = "Quality"
     
     def _percentage_display(self, value, label):
-        if value is not None:
-            color = '#28a745' if value >= 85 else '#007bff' if value >= 70 else '#ffc107' if value >= 50 else '#dc3545'
-            value_str = f"{float(value):.1f}"
-            return format_html('<span style="color: {}; font-weight: bold;">{}%</span>', color, value_str)
+        from decimal import InvalidOperation
+        
+        try:
+            if value is not None:
+                color = '#28a745' if value >= 85 else '#007bff' if value >= 70 else '#ffc107' if value >= 50 else '#dc3545'
+                value_str = f"{float(value):.1f}"
+                return format_html('<span style="color: {}; font-weight: bold;">{}%</span>', color, value_str)
+        except (InvalidOperation, ValueError, TypeError):
+            return format_html('<span style="color: #dc3545;">Error: Invalid data</span>')
+        
         return "N/A"
 
 
