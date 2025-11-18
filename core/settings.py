@@ -33,7 +33,7 @@ CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False
 
-ALLOWED_HOSTS = ['stacie-unhounded-pisciculturally.ngrok-free.dev']
+ALLOWED_HOSTS = []
 
 
 # Application definition
