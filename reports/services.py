@@ -26,6 +26,8 @@ class ProductionCalculationService:
         Returns:
             float: Weighted average syrup yield or None if no valid data
         """
+        from decimal import InvalidOperation
+        
         runs_with_data = queryset.select_related('report').filter(
             report__syrup_yield_percentage__isnull=False,
             good_products_pack__gt=0
@@ -34,11 +36,30 @@ class ProductionCalculationService:
         total_weighted_syrup_yield = Decimal('0')
         total_production_for_yield = 0
         
-        for run in runs_with_data:
-            if run.report and run.report.syrup_yield_percentage is not None:
-                weighted_yield = Decimal(str(run.report.syrup_yield_percentage)) * run.good_products_pack
-                total_weighted_syrup_yield += weighted_yield
-                total_production_for_yield += run.good_products_pack
+        try:
+            for run in runs_with_data:
+                if run.report and run.report.syrup_yield_percentage is not None:
+                    try:
+                        # Convert to Decimal safely, handling invalid values
+                        syrup_yield = Decimal(str(run.report.syrup_yield_percentage))
+                        
+                        # Check if the value is finite (not NaN or Inf)
+                        if not syrup_yield.is_finite():
+                            continue
+                        
+                        weighted_yield = syrup_yield * run.good_products_pack
+                        total_weighted_syrup_yield += weighted_yield
+                        total_production_for_yield += run.good_products_pack
+                    except (ValueError, TypeError, InvalidOperation) as e:
+                        # Skip invalid values and continue
+                        continue
+        except InvalidOperation as e:
+            # Handle case where database has invalid decimal values that can't be fetched
+            # Log the error and return None
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Invalid decimal value in database for syrup_yield_percentage: {e}")
+            return None
         
         if total_production_for_yield > 0:
             return float(total_weighted_syrup_yield / total_production_for_yield)
