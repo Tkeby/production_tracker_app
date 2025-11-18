@@ -218,9 +218,10 @@ class ProductionRunAdmin(admin.ModelAdmin):
         from decimal import InvalidOperation
         
         try:
-            if hasattr(obj, 'report') and obj.report and obj.report.oee:
-                oee_value = float(obj.report.oee)
-                grade = obj.report.oee_grade
+            report = obj.report
+            if report and report.oee:
+                oee_value = float(report.oee)
+                grade = report.oee_grade
                 
                 color_map = {
                     'World Class': '#28a745',
@@ -237,8 +238,7 @@ class ProductionRunAdmin(admin.ModelAdmin):
                     'border-radius: 3px; font-size: 11px; font-weight: bold;">{}%</span>',
                     color, oee_str
                 )
-        except (InvalidOperation, ValueError, AttributeError) as e:
-            # Handle invalid decimal values in database
+        except (InvalidOperation, ValueError, AttributeError):
             return format_html('<span style="color: #dc3545;">Error: Invalid data</span>')
         
         return format_html('<span style="color: #6c757d;">Not calculated</span>')
