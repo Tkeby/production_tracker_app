@@ -277,28 +277,42 @@ class ProductionCalculationService:
             start_date, end_date, production_line, machine=machine
         )
 
-        # Group by date and calculate average OEE
+        # Group by date and calculate average OEE components
         daily_oee = queryset.values('production_run__date').annotate(
-            avg_oee=Avg('oee'),
             avg_availability=Avg('availability'),
             avg_performance=Avg('performance'),
             avg_quality=Avg('quality'),
             runs_count=Count('id'),
             production_run__id=F('production_run__id')
-
         ).order_by('production_run__date')
         
-        # Convert to list and add downtime data
-        oee_data = list(daily_oee)
+        # Convert to list and calculate OEE as product of component averages
+        oee_data = []
+        for day_data in daily_oee:
+            day_dict = dict(day_data)
+            # OEE = Availability × Performance × Quality
+            # Values are stored as percentages (0-100), so divide by 10000 (100²)
+            avg_avail = day_dict['avg_availability'] or 0
+            avg_perf = day_dict['avg_performance'] or 0
+            avg_qual = day_dict['avg_quality'] or 0
+            day_dict['avg_oee'] = (avg_avail * avg_perf * avg_qual) / 10000
+            oee_data.append(day_dict)
         
         # Calculate overall period averages
         period_averages = queryset.aggregate(
-            period_avg_oee=Avg('oee'),
             period_avg_availability=Avg('availability'),
             period_avg_performance=Avg('performance'),
             period_avg_quality=Avg('quality'),
             total_runs=Count('id')
         )
+        
+        # Calculate OEE as the product of the three component averages
+        # OEE = Availability × Performance × Quality
+        # Values are stored as percentages (0-100), so divide by 10000 (100²)
+        avg_avail = period_averages['period_avg_availability'] or 0
+        avg_perf = period_averages['period_avg_performance'] or 0
+        avg_qual = period_averages['period_avg_quality'] or 0
+        period_averages['period_avg_oee'] = (avg_avail * avg_perf * avg_qual) / 10000
         
         # Format downtime data for Pareto chart using existing method
         downtime_pareto_data = ProductionCalculationService.calculate_downtime_pareto(
