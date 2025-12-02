@@ -185,9 +185,18 @@ class ProductionCalculationService:
         weekly_totals = queryset.aggregate(
             total_production=Sum('good_products_pack'),
             total_downtime=Sum('total_downtime_minutes'),
-            avg_oee=Avg('report__oee'),
+            avg_availability=Avg('report__availability'),
+            avg_performance=Avg('report__performance'),
+            avg_quality=Avg('report__quality'),
             total_runs=Count('id')
         )
+        
+        # Calculate OEE as the product of the three component averages
+        # Values are stored as percentages (0-100), so divide by 10000 (100²)
+        avg_avail = weekly_totals['avg_availability'] or 0
+        avg_perf = weekly_totals['avg_performance'] or 0
+        avg_qual = weekly_totals['avg_quality'] or 0
+        weekly_totals['avg_oee'] = (avg_avail * avg_perf * avg_qual) / 10000
         
         # Add weighted average syrup yield
         weekly_totals['avg_syrup_yield'] = weighted_avg_syrup_yield
